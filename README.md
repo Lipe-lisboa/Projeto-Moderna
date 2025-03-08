@@ -1,0 +1,1 @@
+# Market Share | Script para consolidar dados do site da Anatel e armazenar em parquets  
