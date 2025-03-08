@@ -9,10 +9,12 @@ datas_dict = {}
 def datas_menssais (ano):
     datas_dict = {ano: []}
     
-
+    # Para que os meses fiquem em português
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
     
     for mes in range(1,13):
+        
+        #pega o ultimo dia de cada mês 
         _, ultimo_dia  = calendar.monthrange(ano,mes)
         
         if mes < 10:
@@ -25,6 +27,7 @@ def datas_menssais (ano):
             
         nome_mes = calendar.month_name[mes]
         
+        #adiciona os dados no dicionario
         datas_dict[nome_mes] = {
             'data_inicio': data_inicio,
             'data_limite': data_limite
