@@ -2,12 +2,12 @@ import pandas as pd
 import calendar
 import locale
 from datetime import datetime
+from transformando_arquivos_parquet import convert_parquet
 
 
 datas_dict = {}
 
 def datas_menssais (ano):
-    datas_dict = {ano: []}
     
     # Para que os meses fiquem em português
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
@@ -35,9 +35,8 @@ def datas_menssais (ano):
 datas_menssais(2025)
 
 
-
 def dividir_csv_por_mes():
-    file = 'arquivos_csv/Produtos_Homologados_Anatel.csv'
+    file = 'Produtos_Homologados_Anatel.csv'
 
     try:
         df = pd.read_csv(file, sep=";", encoding="utf-8")  # Lendo diretamente para um DataFrame
@@ -55,14 +54,21 @@ def dividir_csv_por_mes():
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
+
                 # pega o df filtrado e transforma em um arquivo csv 
                 df_filtrado.to_csv(f'arquivos_csv/Homologacoes_de_{mes}.csv', encoding='utf-8', index=False, sep=';')
-            
                 
+                # convertendo csv em parquet
+                convert_parquet(df_filtrado, f'arquivos_parquet/Homologacoes_de_{mes}.parquet')
+            
     except FileNotFoundError:
         print(f"Erro: Arquivo '{file}' não encontrado.")
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
 
 dividir_csv_por_mes()
+
+df_marco = pd.read_parquet(f'arquivos_parquet/Homologacoes_de_março.parquet')
+
+print(df_marco)
         
