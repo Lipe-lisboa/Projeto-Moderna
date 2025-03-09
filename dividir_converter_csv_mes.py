@@ -40,7 +40,7 @@ def dividir_csv_por_mes():
 
     try:
         df = pd.read_csv(file, sep=";", encoding="utf-8")  # Lendo diretamente para um DataFrame
-
+        
         # Transformei a coluna "Data da Homologação" para o tipo: datetime
         df['Data da Homologação'] = pd.to_datetime(df['Data da Homologação'], format='%d/%m/%Y')
         
