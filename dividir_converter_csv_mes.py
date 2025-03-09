@@ -3,6 +3,7 @@ import calendar
 import locale
 from datetime import datetime
 from transformando_arquivos_parquet import convert_parquet
+import os
 
 
 datas_dict = {}
@@ -45,6 +46,13 @@ def dividir_csv_por_mes():
         df['Data da Homologação'] = pd.to_datetime(df['Data da Homologação'], format='%d/%m/%Y')
         
         for mes in datas_dict:
+            
+            data_string = datas_dict[mes]['data_inicio']
+            partes_data = data_string.split('/')
+            ano = partes_data[2]  # O ano é o terceiro elemento (índice 2)
+            pasta_base_csv = 'arquivos_csv'
+            pasta_base_parquet = 'arquivos_parquet'
+
             # Peguei as datas do dicionario e converti para o formato 'yyyy-mm-dd'
             data_inicio = datetime.strptime(datas_dict[mes]['data_inicio'], '%d/%m/%Y').strftime('%Y-%m-%d')
             data_limite = datetime.strptime(datas_dict[mes]['data_limite'], '%d/%m/%Y').strftime('%Y-%m-%d')
@@ -54,12 +62,20 @@ def dividir_csv_por_mes():
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
+                
+                pasta_ano = os.path.join(pasta_base_csv, ano)
+                if not os.path.exists(pasta_ano):
+                    os.makedirs(pasta_ano)
 
                 # pega o df filtrado e transforma em um arquivo csv 
-                df_filtrado.to_csv(f'arquivos_csv/Homologacoes_de_{mes}.csv', encoding='utf-8', index=False, sep=';')
+                df_filtrado.to_csv(f'{pasta_ano}/Homologacoes_de_{mes}.csv', encoding='utf-8', index=False, sep=';')
+                
+                pasta_ano = os.path.join(pasta_base_parquet, ano)
+                if not os.path.exists(pasta_ano):
+                    os.makedirs(pasta_ano)
                 
                 # convertendo csv em parquet
-                convert_parquet(df_filtrado, f'arquivos_parquet/Homologacoes_de_{mes}.parquet')
+                convert_parquet(df_filtrado, f'{pasta_ano}/Homologacoes_de_{mes}.parquet')
             
     except FileNotFoundError:
         print(f"Erro: Arquivo '{file}' não encontrado.")
