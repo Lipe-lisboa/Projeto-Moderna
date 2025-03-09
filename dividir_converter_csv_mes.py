@@ -67,8 +67,4 @@ def dividir_csv_por_mes():
         print(f"Ocorreu um erro: {e}")
 
 dividir_csv_por_mes()
-
-df_marco = pd.read_parquet(f'arquivos_parquet/Homologacoes_de_março.parquet')
-
-print(df_marco)
         
