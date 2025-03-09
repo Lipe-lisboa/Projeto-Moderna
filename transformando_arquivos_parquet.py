@@ -1,4 +1,4 @@
 import pandas as pd
 
-def convert_parquet(df:pd.DataFrame, nome):
-    df.to_parquet(nome, index=False)
+def convert_parquet(df:pd.DataFrame, file:str):
+    df.to_parquet(file, index=False)
