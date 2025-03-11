@@ -1,0 +1,20 @@
+import requests
+
+def baixar_arquivo(url, nome_arquivo):
+    resposta = requests.get(url, stream=True)
+    resposta.raise_for_status()  # Verifica se houve erros na requisição
+
+
+    #Essa parte do código pega o arquivo baixado da internet em "pedaços", 
+    # e escreve cada pedaço no seu computador, montando o arquivo final
+    with open(nome_arquivo, 'wb') as arquivo:
+        for bloco in resposta.iter_content(chunk_size=8192):
+            arquivo.write(bloco)
+
+# Exemplo de uso
+url_do_arquivo = 'https://www.anatel.gov.br/dadosabertos/paineis_de_dados/certificacao_de_produtos/produtos_certificados.zip' # Insira aqui a URL
+nome_do_arquivo_local = 'produtos_certificados.zip' # Insira aqui o nome do arquivo que será salvo
+
+baixar_arquivo(url_do_arquivo, nome_do_arquivo_local)
+
+print(f"Arquivo baixado com sucesso e salvo como: {nome_do_arquivo_local}")
