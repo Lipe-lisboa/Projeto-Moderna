@@ -2,7 +2,6 @@ import pandas as pd
 import calendar
 import locale
 from datetime import datetime
-from transformando_arquivos_parquet import convert_parquet
 import os
 
 
@@ -33,6 +32,9 @@ def datas_menssais (ano):
             'data_inicio': data_inicio,
             'data_limite': data_limite
         }
+
+def convert_parquet(df:pd.DataFrame, file:str):
+    df.to_parquet(file, index=False)
 
 def dividir_csv_por_mes(ano):
     datas_menssais(ano)

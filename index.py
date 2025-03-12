@@ -1,6 +1,6 @@
 from baixar_arquivo_zip import baixar_arquivo
 from extrair_csv import extrair
-from dividir_converter_csv_mes import datas_menssais, dividir_csv_por_mes
+from dividir_converter_csv_mes import datas_menssais, convert_parquet, dividir_csv_por_mes
 
 # Juntando todas as etapas
 
