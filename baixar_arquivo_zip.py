@@ -11,10 +11,10 @@ def baixar_arquivo(url, nome_arquivo):
         for bloco in resposta.iter_content(chunk_size=8192):
             arquivo.write(bloco)
 
-# Exemplo de uso
-url_do_arquivo = 'https://www.anatel.gov.br/dadosabertos/paineis_de_dados/certificacao_de_produtos/produtos_certificados.zip' # Insira aqui a URL
-nome_do_arquivo_local = 'produtos_certificados.zip' # Insira aqui o nome do arquivo que será salvo
+    print(f'"{nome_arquivo}" baixado com sucesso!')
 
-baixar_arquivo(url_do_arquivo, nome_do_arquivo_local)
 
-print(f"Arquivo baixado com sucesso e salvo como: {nome_do_arquivo_local}")
+#url_do_arquivo = 'https://www.anatel.gov.br/dadosabertos/paineis_de_dados/certificacao_de_produtos/produtos_certificados.zip' # url do arquivo zip
+#nome_do_arquivo_local = 'produtos_certificados.zip' # nome para o arquivo
+
+#baixar_arquivo(url_do_arquivo, nome_do_arquivo_local)

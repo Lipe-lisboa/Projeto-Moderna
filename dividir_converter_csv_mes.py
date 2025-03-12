@@ -33,10 +33,10 @@ def datas_menssais (ano):
             'data_inicio': data_inicio,
             'data_limite': data_limite
         }
-datas_menssais(2025)
 
+def dividir_csv_por_mes(ano):
+    datas_menssais(ano)
 
-def dividir_csv_por_mes():
     file = 'Produtos_Homologados_Anatel.csv'
 
     try:
@@ -57,12 +57,13 @@ def dividir_csv_por_mes():
             data_inicio = datetime.strptime(datas_dict[mes]['data_inicio'], '%d/%m/%Y').strftime('%Y-%m-%d')
             data_limite = datetime.strptime(datas_dict[mes]['data_limite'], '%d/%m/%Y').strftime('%Y-%m-%d')
               
-            #A filtragem só aceita datas do tipo: yyyy-mm-dd (por isso tive que converter as datas do dicionario)   
+            # A filtragem só aceita datas do tipo: yyyy-mm-dd (por isso tive que converter as datas do dicionario)   
             df_filtrado = df[(df['Data da Homologação'] >= data_inicio) & (df['Data da Homologação'] <= data_limite)]
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
                 
+                #Criando a pasta do ano, dentro da pasta: pasta_base_csv
                 pasta_ano = os.path.join(pasta_base_csv, ano)
                 if not os.path.exists(pasta_ano):
                     os.makedirs(pasta_ano)
@@ -70,6 +71,7 @@ def dividir_csv_por_mes():
                 # pega o df filtrado e transforma em um arquivo csv 
                 df_filtrado.to_csv(f'{pasta_ano}/Homologacoes_de_{mes}.csv', encoding='utf-8', index=False, sep=';')
                 
+                #Criando a pasta do ano, dentro da pasta: pasta_base_parquet
                 pasta_ano = os.path.join(pasta_base_parquet, ano)
                 if not os.path.exists(pasta_ano):
                     os.makedirs(pasta_ano)
@@ -81,6 +83,3 @@ def dividir_csv_por_mes():
         print(f"Erro: Arquivo '{file}' não encontrado.")
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
-
-dividir_csv_por_mes()
-        
