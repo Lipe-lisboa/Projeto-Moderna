@@ -19,4 +19,10 @@ print("Argumentos:", sys.argv[1:])
 
 if len(sys.argv) > 1:
     for arg in sys.argv[1:]:
-        dividir_csv_por_mes(int(arg))
+        try:
+            ano = int(arg)
+            dividir_csv_por_mes(int(arg))
+        except TypeError:
+            print('Erro: argumento deve ser do tipo Int')
+        except Exception as e:
+            print(f"Ocorreu um erro: {e}")
