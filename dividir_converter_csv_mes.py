@@ -7,7 +7,7 @@ import os
 
 datas_dict = {}
 
-def datas_menssais (ano):
+def datas_menssais (ano:int):
     
     # Para que os meses fiquem em português
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
@@ -36,7 +36,7 @@ def datas_menssais (ano):
 def convert_parquet(df:pd.DataFrame, file:str):
     df.to_parquet(file, index=False)
 
-def dividir_csv_por_mes(ano):
+def dividir_csv_por_mes(ano:int):
     datas_menssais(ano)
 
     file = 'Produtos_Homologados_Anatel.csv'
@@ -64,14 +64,6 @@ def dividir_csv_por_mes(ano):
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
-                
-                #Criando a pasta do ano, dentro da pasta: pasta_base_csv
-                pasta_ano = os.path.join(pasta_base_csv, ano)
-                if not os.path.exists(pasta_ano):
-                    os.makedirs(pasta_ano)
-
-                # pega o df filtrado e transforma em um arquivo csv 
-                df_filtrado.to_csv(f'{pasta_ano}/Homologacoes_de_{mes}.csv', encoding='utf-8', index=False, sep=';')
                 
                 #Criando a pasta do ano, dentro da pasta: pasta_base_parquet
                 pasta_ano = os.path.join(pasta_base_parquet, ano)
