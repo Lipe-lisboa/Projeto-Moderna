@@ -1,6 +1,6 @@
 import requests
 
-def baixar_arquivo(url, nome_arquivo):
+def baixar_arquivo(url:str, nome_arquivo:str):
     resposta = requests.get(url, stream=True)
     resposta.raise_for_status()  # Verifica se houve erros na requisição
 

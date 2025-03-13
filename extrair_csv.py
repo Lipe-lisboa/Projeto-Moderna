@@ -3,7 +3,7 @@ import zipfile
 zip_path = "produtos_certificados.zip"  # Caminho do arquivo ZIP
 
 
-def extrair(zip_path):
+def extrair(zip_path:str):
     # Abrindo o ZIP
     with zipfile.ZipFile(zip_path, "r") as zip_file:
         # Listar os arquivos dentro do ZIP
