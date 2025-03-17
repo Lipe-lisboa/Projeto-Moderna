@@ -63,8 +63,6 @@ def certificados_ocd(ocd_enviado,ano, mes):
     else:
         print('OCD não identificado.')
         
-        
-def list_ocds():
-    ...
+
 certificados_ocd('MODERNA', 2025, 'fevereiro')
 

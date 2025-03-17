@@ -41,10 +41,10 @@ def get_item(item_id: int):
 
     return {'Item': search[0]}
 
-spark = SS.builder.appName( "Projeto" ).getOrCreate()
 
 @app.get("/certificados/{ocd_enviado}")
 def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
+    spark = SS.builder.appName( "Projeto" ).getOrCreate()
     try:
         df = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes}.parquet')
         
@@ -68,35 +68,3 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     
     
     return saida
-
-
-@app.get("/certificados/ocds")
-def certificados_ocds(ano:int, mes:str):
-    try:
-        df_spark = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes}.parquet')
-    except FileNotFoundError:
-        return "arquivo não encontrado"
-    
-    list_ocds = [
-        'MODERNA',
-        'NCC'
-    ]
-    
-    coluna = "Certificado de Conformidade Técnica"
-
-    saida = []
-    for ocd in list_ocds:
-        df_filtrado = df_spark.filter(F.col(coluna).contains(ocd)).select(coluna)
-        
-        if df_filtrado:
-            quantidade_certificados = df_filtrado.distinct().count()
-            
-            saida.append({
-                'ocd':ocd,
-                'quantidade_de_certificado':quantidade_certificados
-            })
-        
-    return saida
-        
-
-        
