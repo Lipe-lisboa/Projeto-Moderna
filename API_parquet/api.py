@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from pathlib import Path
+from pyspark.sql import SparkSession as SS, functions as F
+
 
 # uvicorn api:app --reload
 app = FastAPI()
@@ -8,9 +9,6 @@ app = FastAPI()
 def hello_world_root():
     return {"Hello": "World"}
 
-
-#OBTER item
-#Com uma base de dados, desenvolvemos as rotas para buscar a informação (GET), conforme código a seguir:
 menu = [
     {   'id': 1,
         'name': 'coffee',
@@ -33,8 +31,8 @@ menu = [
     }
 ]
 
-@app.get('/get-item/{item_id}')
-def get_item(item_id: int = Path(description="Preencha com o ID do item que deseja visualizar")):
+@app.get("/items/{item_id}")
+def get_item(item_id: int):
 
     search = list(filter(lambda x: x["id"] == item_id, menu))
 
@@ -43,31 +41,62 @@ def get_item(item_id: int = Path(description="Preencha com o ID do item que dese
 
     return {'Item': search[0]}
 
-@app.get('/get-by-name')
-def get_item(name: str = None):
+spark = SS.builder.appName( "Projeto" ).getOrCreate()
 
-    search = list(filter(lambda x: x["name"] == name, menu))
+@app.get("/certificados/{ocd_enviado}")
+def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
+    try:
+        df = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes}.parquet')
+        
+    except FileNotFoundError:
+        return "arquivo não encontrado"
 
-    if search == []:
-        return {'item': 'Does not exist'}
+    coluna = "Certificado de Conformidade Técnica"
 
-    return {'Item': search[0]}
+    df_filtrado = df.filter(F.col(coluna).contains(ocd_enviado.upper())).select(coluna)
+    
+    if df_filtrado:
+        quantidade_certificados = df_filtrado.distinct().count()
+        
+        saida = {
+            'ocd':ocd_enviado.upper(),
+            'quantidade_de_certificado':quantidade_certificados
+        }
+    
+    else:
+        saida = 'OCD não encontrado'
+    
+    
+    return saida
 
 
-@app.get('/list-menu')
-def list_menu():
-    return {'Menu': menu}
+@app.get("/certificados/ocds")
+def certificados_ocds(ano:int, mes:str):
+    try:
+        df_spark = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes}.parquet')
+    except FileNotFoundError:
+        return "arquivo não encontrado"
+    
+    list_ocds = [
+        'MODERNA',
+        'NCC'
+    ]
+    
+    coluna = "Certificado de Conformidade Técnica"
 
-@app.post('/create-item/{item_id}')
-def create_item(item_id, item):
+    saida = []
+    for ocd in list_ocds:
+        df_filtrado = df_spark.filter(F.col(coluna).contains(ocd)).select(coluna)
+        
+        if df_filtrado:
+            quantidade_certificados = df_filtrado.distinct().count()
+            
+            saida.append({
+                'ocd':ocd,
+                'quantidade_de_certificado':quantidade_certificados
+            })
+        
+    return saida
+        
 
-    search = list(filter(lambda x: x["id"] == item_id, menu))
-
-    if search != []:
-        return {'Error': 'Item exists'}
-
-    item = item.dict()
-    item['id'] = item_id
-
-    menu.append(item)
-    return item
+        

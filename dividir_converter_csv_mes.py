@@ -44,8 +44,10 @@ def dividir_csv_por_mes(ano:int):
     try:
         df = pd.read_csv(file, sep=";", encoding="utf-8")  # Lendo diretamente para um DataFrame
         
+        
         # Transformei a coluna "Data da Homologação" para o tipo: datetime
-        df['Data da Homologação'] = pd.to_datetime(df['Data da Homologação'], format='%d/%m/%Y')
+        df['Data do Certificado de Conformidade Técnica'] = pd.to_datetime(df['Data do Certificado de Conformidade Técnica'], format='%d/%m/%Y')
+
         
         for mes in datas_dict:
             
@@ -60,7 +62,12 @@ def dividir_csv_por_mes(ano:int):
             data_limite = datetime.strptime(datas_dict[mes]['data_limite'], '%d/%m/%Y').strftime('%Y-%m-%d')
               
             # A filtragem só aceita datas do tipo: yyyy-mm-dd (por isso tive que converter as datas do dicionario)   
-            df_filtrado = df[(df['Data da Homologação'] >= data_inicio) & (df['Data da Homologação'] <= data_limite)]
+            df_filtrado = df[(df['Data do Certificado de Conformidade Técnica'] >= data_inicio) & (df['Data do Certificado de Conformidade Técnica'] <= data_limite)]
+            
+            
+            df['Data do Certificado de Conformidade Técnica'] = df['Data do Certificado de Conformidade Técnica'].astype(str)
+
+            print(df.dtypes)
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
@@ -71,7 +78,7 @@ def dividir_csv_por_mes(ano:int):
                     os.makedirs(pasta_ano)
                 
                 # convertendo csv em parquet
-                convert_parquet(df_filtrado, f'{pasta_ano}/Homologacoes_de_{mes}.parquet')
+                convert_parquet(df_filtrado, f'{pasta_ano}/certificados_de_{mes}.parquet')
             
     except FileNotFoundError:
         print(f"Erro: Arquivo '{file}' não encontrado.")
