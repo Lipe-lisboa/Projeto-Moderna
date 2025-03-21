@@ -54,7 +54,6 @@ def dividir_csv_por_mes(ano:int):
             data_string = datas_dict[mes]['data_inicio']
             partes_data = data_string.split('/')
             ano = partes_data[2]  # O ano é o terceiro elemento (índice 2)
-            pasta_base_csv = 'arquivos_csv'
             pasta_base_parquet = 'arquivos_parquet'
 
             # Peguei as datas do dicionario e converti para o formato 'yyyy-mm-dd'

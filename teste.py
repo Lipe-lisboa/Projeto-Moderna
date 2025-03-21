@@ -90,5 +90,5 @@ def ocds(ano, mes):
 
     return list_ocds
 
-print(ocds(2025, 'março'))
+#print(ocds(2025, 'março'))
 
