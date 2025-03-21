@@ -67,7 +67,6 @@ def dividir_csv_por_mes(ano:int):
             
             df['Data do Certificado de Conformidade Técnica'] = df['Data do Certificado de Conformidade Técnica'].astype(str)
 
-            print(df.dtypes)
             
             # Se "df_filtrado" não estiver vazio:
             if  not df_filtrado.empty:
