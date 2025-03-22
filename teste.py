@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from unidecode import unidecode
+import regex
 
 def certificados_ocd(ocd_enviado,ano, mes):
     
@@ -12,8 +13,8 @@ def certificados_ocd(ocd_enviado,ano, mes):
         return
 
     list_certificado = []
-    list_ocds = []
     data = []
+    list_ocds = []
 
     #adiciona itens em list_ocds e list_certificado
     for certificado in df['Certificado de Conformidade Técnica']:
@@ -33,8 +34,6 @@ def certificados_ocd(ocd_enviado,ano, mes):
         if ocd not in list_ocds:
             list_ocds.append(ocd)
         
-        
-        #Adiciona todos os certificados em uma lista
         if certificado not in list_certificado: 
             list_certificado.append(certificado) 
     
@@ -59,10 +58,37 @@ def certificados_ocd(ocd_enviado,ano, mes):
     
     if item:
         print(item)
+        print()
         
     else:
         print('OCD não identificado.')
         
 
-certificados_ocd('MODERNA', 2025, 'fevereiro')
+#certificados_ocd('MODERNA', 2024, 'fevereiro')
+
+
+def ocds(ano, mes):
+    try:
+        df = pd.read_parquet(f'arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
+        
+    except FileNotFoundError:
+        print("arquivo não encontrado")
+        return
+    
+    list_ocds = []
+    #adiciona itens em list_ocds e list_certificado
+    for certificado in df['Certificado de Conformidade Técnica']:
+        
+        #Deixa apenas letras e traço
+        ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado).strip('/- ')
+        
+
+        #Adiciona o ocd na lista de ocds
+        if ocd not in list_ocds:
+            if ocd != '':
+                list_ocds.append(ocd)
+
+    return list_ocds
+
+#print(ocds(2025, 'março'))
 
