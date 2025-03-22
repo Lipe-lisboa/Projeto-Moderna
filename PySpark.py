@@ -10,3 +10,4 @@ df_filtrado = df.filter(F.col(coluna).contains("MODERNA")).select(coluna)
 
 quantidade_certificados = df_filtrado.distinct().count()
 print('certificados:',quantidade_certificados)
+print(spark.version)
