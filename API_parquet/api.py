@@ -3,6 +3,7 @@ from pyspark.sql import SparkSession as SS, functions as F
 import pandas as pd
 import regex
 
+
 def ocds(ano, mes):
     try:
         df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
@@ -33,6 +34,7 @@ app = FastAPI()
 @app.get("/certificados/{ocd_enviado}")
 def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
+    
     try:
         df = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes.lower()}.parquet')
         
@@ -61,15 +63,16 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
 @app.get("/certificados/{mes}/{ano}")
 def certificados_ocds(ano:int, mes:str):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
+    
     try:
         df = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes.lower()}.parquet')
-        
     except FileNotFoundError:
-        return "arquivo não encontrado"
+        return "Arquivo não encontrado"
+
 
     coluna = "Certificado de Conformidade Técnica"
 
-    lista_ocd = ocds(ano,mes) 
+    lista_ocd = ocds(ano, mes) 
 
     saida = []
 
