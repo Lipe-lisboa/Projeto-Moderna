@@ -1,83 +1,66 @@
 import pandas as pd
-import calendar
-import locale
-from datetime import datetime
 import os
+from pyspark.sql import SparkSession as SS, functions as F
+from pyspark.sql.functions import col
 
-
-datas_dict = {}
-
-def datas_menssais (ano:int):
-    
-    # Para que os meses fiquem em português
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-    
-    for mes in range(1,13):
-        
-        #pega o ultimo dia de cada mês 
-        _, ultimo_dia  = calendar.monthrange(ano,mes)
-        
-        if mes < 10:
-            data_inicio = f'01/0{mes}/{ano}'
-            data_limite = f'{ultimo_dia}/0{mes}/{ano}'
-            
-        else:
-            data_inicio = f'01/{mes}/{ano}'
-            data_limite = f'{ultimo_dia}/{mes}/{ano}'
-            
-        nome_mes = calendar.month_name[mes]
-        
-        #adiciona os dados no dicionario
-        datas_dict[nome_mes] = {
-            'data_inicio': data_inicio,
-            'data_limite': data_limite
-        }
 
 def convert_parquet(df:pd.DataFrame, file:str):
     df.to_parquet(file, index=False)
 
 def dividir_csv_por_mes(ano:int):
-    datas_menssais(ano)
-
-    file = 'Produtos_Homologados_Anatel.csv'
-
+    lista_mes = [
+        {'janeiro': '01'},
+        {'fevereiro': '02'},
+        {'março':'03'},
+        {'abril': '04'},
+        {'maio': '05'},
+        {'junho': '06'},
+        {'julho': '07'},
+        {'agosto': '08'},
+        {'setembro': '09'},
+        {'outubro': '10'},
+        {'novembro': '11'},
+        {'dezembro': '12'},
+    ]
+    
     try:
-        df = pd.read_csv(file, sep=";", encoding="utf-8")  # Lendo diretamente para um DataFrame
+        spark = SS.builder.appName("LerCSV").getOrCreate()
+        file = 'Produtos_Homologados_Anatel.csv'
+        df = spark.read.csv(
+            file,
+            header=True,
+            sep=";",
+            inferSchema=True,
+            encoding='utf-8',
+        )        
         
-        
-        # Transformei a coluna "Data da Homologação" para o tipo: datetime
-        df['Data do Certificado de Conformidade Técnica'] = pd.to_datetime(df['Data do Certificado de Conformidade Técnica'], format='%d/%m/%Y')
-
-        
-        for mes in datas_dict:
-            
-            data_string = datas_dict[mes]['data_inicio']
-            partes_data = data_string.split('/')
-            ano = partes_data[2]  # O ano é o terceiro elemento (índice 2)
-            pasta_base_parquet = 'arquivos_parquet'
-
-            # Peguei as datas do dicionario e converti para o formato 'yyyy-mm-dd'
-            data_inicio = datetime.strptime(datas_dict[mes]['data_inicio'], '%d/%m/%Y').strftime('%Y-%m-%d')
-            data_limite = datetime.strptime(datas_dict[mes]['data_limite'], '%d/%m/%Y').strftime('%Y-%m-%d')
-              
-            # A filtragem só aceita datas do tipo: yyyy-mm-dd (por isso tive que converter as datas do dicionario)   
-            df_filtrado = df[(df['Data do Certificado de Conformidade Técnica'] >= data_inicio) & (df['Data do Certificado de Conformidade Técnica'] <= data_limite)]
-            
-            
-            df['Data do Certificado de Conformidade Técnica'] = df['Data do Certificado de Conformidade Técnica'].astype(str)
-
-            
-            # Se "df_filtrado" não estiver vazio:
-            if  not df_filtrado.empty:
+        for dicionario in lista_mes:
+            for mes, data in dicionario.items():
+    
+                pasta_base_parquet = 'arquivos_parquet'
                 
-                #Criando a pasta do ano, dentro da pasta: pasta_base_parquet
-                pasta_ano = os.path.join(pasta_base_parquet, ano)
-                if not os.path.exists(pasta_ano):
-                    os.makedirs(pasta_ano)
+                # Filtra as linhas onde "Data do Certificado de Conformidade Técnica" contém "03/2025"
+                df_filtrado = df.filter(col("Data do Certificado de Conformidade Técnica").contains(f'{data}/{str(ano)}'))
                 
-                # convertendo csv em parquet
-                convert_parquet(df_filtrado, f'{pasta_ano}/certificados_de_{mes}.parquet')
-            
+                # Coleta os dados como uma lista de linhas
+                dados = df_filtrado.collect()
+                    
+                # Se "df_filtrado" não estiver vazio:
+                if len(dados) != 0:
+
+                    # Cria um Pandas DataFrame a partir dos dados
+                    pandas_df = pd.DataFrame(dados, columns=df_filtrado.columns)
+                    
+                    #Criando a pasta do ano, dentro da pasta: pasta_base_parquet
+                    pasta_ano = os.path.join(pasta_base_parquet, str(ano))
+                    if not os.path.exists(pasta_ano):
+                        os.makedirs(pasta_ano)
+                    
+                    # convertendo csv em parquet
+                    convert_parquet(pandas_df, f'{pasta_ano}/certificados_de_{mes}.parquet')
+        
+        spark.stop()
+        
     except FileNotFoundError:
         print(f"Erro: Arquivo '{file}' não encontrado.")
     except Exception as e:
