@@ -69,7 +69,7 @@ def certificados_ocd(ocd_enviado,ano, mes):
 
 def ocds(ano, mes):
     try:
-        df = pd.read_parquet(f'arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
+        df = pd.read_parquet(f'arquivos_parquet/{str(ano)}/certificados_de_{str(mes)}.parquet')
         
     except FileNotFoundError:
         print("arquivo não encontrado")
@@ -91,4 +91,24 @@ def ocds(ano, mes):
     return list_ocds
 
 #print(ocds(2025, 'março'))
+
+
+def tipo_produto(ano,mes):
+    try:
+        df = pd.read_parquet(f'arquivos_parquet/{str(ano)}/certificados_de_{str(mes)}.parquet')
+        
+    except FileNotFoundError:
+        print("arquivo não encontrado")
+        return
+    
+    list_tp_produto = []
+    #adiciona itens em list_ocds e list_certificado
+    for produto in df['Tipo do Produto']:
+        
+        if produto not in list_tp_produto:
+            list_tp_produto.append(produto)
+
+    return list_tp_produto
+
+print(tipo_produto(2024,'fevereiro'))
 

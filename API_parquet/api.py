@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pyspark.sql import SparkSession as SS, functions as F
 import pandas as pd
 import regex
-
+from pyspark.errors.exceptions.captured import AnalysisException
+from typing import Optional
+from enum import Enum
 
 def ocds(ano, mes):
     try:
@@ -11,9 +13,9 @@ def ocds(ano, mes):
     except FileNotFoundError:
         print("arquivo não encontrado")
         return
-    
-    list_ocds = []
+        
 
+    list_ocds = []
     #adiciona itens em list_ocds e list_certificado
     for certificado in df['Certificado de Conformidade Técnica']:
         
@@ -23,10 +25,29 @@ def ocds(ano, mes):
 
         #Adiciona o ocd na lista de ocds
         if ocd not in list_ocds:
-            if ocd != '':
+            if not 'TESTE' in ocd.upper() and len(ocd) > 1 and ocd != '':
                 list_ocds.append(ocd)
 
     return list_ocds
+
+def tipo_produto(ano,mes):
+    try:
+        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
+        
+    except FileNotFoundError:
+        print("arquivo não encontrado")
+        return
+    
+    list_tp_produto = []
+    #adiciona itens em list_ocds e list_certificado
+    for produto in df['Tipo do Produto']:
+        
+        if produto not in list_tp_produto:
+            list_tp_produto.append(produto)
+
+    return list_tp_produto
+
+print(tipo_produto('2024','fevereiro'))
 
 # uvicorn api:app --reload
 app = FastAPI()
@@ -40,10 +61,12 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
         
     except FileNotFoundError:
         return "arquivo não encontrado"
+    except AnalysisException as e:
+        return f"Erro ao tentar ler o arquivo Parquet: {e} "
 
     coluna = "Certificado de Conformidade Técnica"
 
-    df_filtrado = df.filter(F.col(coluna).contains(ocd_enviado.upper())).select(coluna)
+    df_filtrado = df.filter(F.col(coluna).contains(ocd_enviado)).select(coluna)
     
     if df_filtrado:
         quantidade_certificados = df_filtrado.distinct().count()
@@ -60,6 +83,14 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     return saida
 
 
+
+class TipoProduto(str, Enum):
+    transceptor = "Transceptor para Estação Rádio Base"
+    antena = "Antena"
+    cabo = "Cabo Coaxial"
+    # Adicione outros tipos de produto conforme necessário
+
+
 @app.get("/certificados/{mes}/{ano}")
 def certificados_ocds(ano:int, mes:str):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
@@ -68,22 +99,47 @@ def certificados_ocds(ano:int, mes:str):
         df = spark.read.parquet(f'../arquivos_parquet/{str(ano)}/certificados_de_{mes.lower()}.parquet')
     except FileNotFoundError:
         return "Arquivo não encontrado"
+    except AnalysisException as e:
+        return f"Erro ao tentar ler o arquivo Parquet: {e} "
 
 
-    coluna = "Certificado de Conformidade Técnica"
+    coluna_certificados = "Certificado de Conformidade Técnica"
 
     lista_ocd = ocds(ano, mes) 
+    print(len(lista_ocd))
 
     saida = []
 
+    dict_name = {
+        'UL-BR': 'UL',
+        'OCP': 'OCPTELLI',
+        'ABCP-OCD':'ABCP',
+        'MT':'MASTER',
+        'ELD':'ELDORADO',
+        'QC':'QCCERT',
+        'TÜV': 'TUV',
+        'BRC': 'BRACERT',
+        'BRA': 'BR APPROVAL',
+    }
+
+
+
     if lista_ocd:
         for ocd in lista_ocd:
-            df_filtrado = df.filter(F.col(coluna).contains(ocd)).select(coluna)
-            quantidade_certificados = df_filtrado.distinct().count()
+
+            # .select(coluna_certificados)
+
+            df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd)).select(coluna_certificados)
             
-            saida.append({
-                'ocd':ocd,
-                'quantidade_de_certificado':quantidade_certificados
-            })
+            quantidade_certificados = df_filtrado.distinct().count()
+
+
+            if quantidade_certificados != 0:
+                if ocd in dict_name:
+                    ocd = dict_name[ocd]
+                saida.append({
+                    'ocd':ocd.upper(),
+                    'quantidade_de_certificado':quantidade_certificados
+                })
         
         return saida
