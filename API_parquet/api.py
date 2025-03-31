@@ -47,9 +47,6 @@ def tipo_produto(ano,mes):
 
     return list_tp_produto
 
-print(tipo_produto('2024','fevereiro'))
-
-# uvicorn api:app --reload
 app = FastAPI()
 
 @app.get("/certificados/{ocd_enviado}")
@@ -83,16 +80,8 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     return saida
 
 
-
-class TipoProduto(str, Enum):
-    transceptor = "Transceptor para Estação Rádio Base"
-    antena = "Antena"
-    cabo = "Cabo Coaxial"
-    # Adicione outros tipos de produto conforme necessário
-
-
-@app.get("/certificados/{mes}/{ano}")
-def certificados_ocds(ano:int, mes:str):
+@app.get("/certificados")
+def certificados_ocds(ano:int, mes:str,  produto: Optional[str] = None):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
     
     try:
@@ -101,7 +90,6 @@ def certificados_ocds(ano:int, mes:str):
         return "Arquivo não encontrado"
     except AnalysisException as e:
         return f"Erro ao tentar ler o arquivo Parquet: {e} "
-
 
     coluna_certificados = "Certificado de Conformidade Técnica"
 
@@ -114,6 +102,7 @@ def certificados_ocds(ano:int, mes:str):
         'UL-BR': 'UL',
         'OCP': 'OCPTELLI',
         'ABCP-OCD':'ABCP',
+        'OCD':'BRICS',
         'MT':'MASTER',
         'ELD':'ELDORADO',
         'QC':'QCCERT',
@@ -129,10 +118,13 @@ def certificados_ocds(ano:int, mes:str):
 
             # .select(coluna_certificados)
 
-            df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd)).select(coluna_certificados)
-            
-            quantidade_certificados = df_filtrado.distinct().count()
-
+            if produto is not None:
+                df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd))
+                df_filtrado = df_filtrado.filter(F.upper(F.col("Tipo do Produto")).contains(produto.upper())).select(coluna_certificados)
+                quantidade_certificados = df_filtrado.distinct().count()
+            else:
+                df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd)).select(coluna_certificados)
+                quantidade_certificados = df_filtrado.distinct().count()
 
             if quantidade_certificados != 0:
                 if ocd in dict_name:
@@ -141,5 +133,14 @@ def certificados_ocds(ano:int, mes:str):
                     'ocd':ocd.upper(),
                     'quantidade_de_certificado':quantidade_certificados
                 })
-        
+            
+            
+            if 'OCD-ABCP' in lista_ocd and 'OCD' in lista_ocd:
+                cert_abcp = None
+                for dicionario in saida:
+                    if dicionario['ocd'] == 'ABCP':
+                        cert_abcp = dicionario['quantidade_de_certificado']
+                for dicionario in saida:
+                    if dicionario['ocd'] == 'BRICS':
+                        dicionario['quantidade_de_certificado'] = dicionario['quantidade_de_certificado'] - cert_abcp
         return saida

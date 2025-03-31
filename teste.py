@@ -82,7 +82,6 @@ def ocds(ano, mes):
         #Deixa apenas letras e traço
         ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado).strip('/- ')
         
-
         #Adiciona o ocd na lista de ocds
         if ocd not in list_ocds:
             if ocd != '':
@@ -90,7 +89,7 @@ def ocds(ano, mes):
 
     return list_ocds
 
-#print(ocds(2025, 'março'))
+ocds(2024, 'janeiro')
 
 
 def tipo_produto(ano,mes):
@@ -110,5 +109,5 @@ def tipo_produto(ano,mes):
 
     return list_tp_produto
 
-print(tipo_produto(2024,'fevereiro'))
+#print(tipo_produto(2024,'fevereiro'))
 
