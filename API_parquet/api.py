@@ -3,8 +3,7 @@ from pyspark.sql import SparkSession as SS, functions as F
 import pandas as pd
 import regex
 from pyspark.errors.exceptions.captured import AnalysisException
-from typing import Optional
-from enum import Enum
+from typing import Optional, List
 
 def ocds(ano, mes):
     try:
@@ -81,7 +80,7 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
 
 
 @app.get("/certificados")
-def certificados_ocds(ano:int, mes:str,  produto: Optional[str] = None):
+def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, description="Opções de produto (separadas por vírgula)")):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
     
     try:
@@ -94,7 +93,8 @@ def certificados_ocds(ano:int, mes:str,  produto: Optional[str] = None):
     coluna_certificados = "Certificado de Conformidade Técnica"
 
     lista_ocd = ocds(ano, mes) 
-    print(len(lista_ocd))
+    #print(lista_ocd)
+    #print(len(lista_ocd))
 
     saida = []
 
@@ -110,18 +110,19 @@ def certificados_ocds(ano:int, mes:str,  produto: Optional[str] = None):
         'BRC': 'BRACERT',
         'BRA': 'BR APPROVAL',
     }
-
-
-
+    
+    print(produtos)
     if lista_ocd:
         for ocd in lista_ocd:
-
-            # .select(coluna_certificados)
-
-            if produto is not None:
-                df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd))
-                df_filtrado = df_filtrado.filter(F.upper(F.col("Tipo do Produto")).contains(produto.upper())).select(coluna_certificados)
-                quantidade_certificados = df_filtrado.distinct().count()
+            if produtos is not None:
+                list_p = produtos.split(',')
+                quantidade_certificados_list = []
+                for p in list_p:
+                    print(p)
+                    df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd))
+                    df_filtrado = df_filtrado.filter(F.upper(F.col("Tipo do Produto")).contains(p.upper())).select(coluna_certificados)
+                    quantidade_certificados_list.append(df_filtrado.distinct().count())
+                quantidade_certificados = sum(quantidade_certificados_list)
             else:
                 df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd)).select(coluna_certificados)
                 quantidade_certificados = df_filtrado.distinct().count()
@@ -135,12 +136,15 @@ def certificados_ocds(ano:int, mes:str,  produto: Optional[str] = None):
                 })
             
             
-            if 'OCD-ABCP' in lista_ocd and 'OCD' in lista_ocd:
+            if 'ABCP-OCD' in lista_ocd and 'OCD' in lista_ocd:
                 cert_abcp = None
                 for dicionario in saida:
                     if dicionario['ocd'] == 'ABCP':
                         cert_abcp = dicionario['quantidade_de_certificado']
+                
                 for dicionario in saida:
                     if dicionario['ocd'] == 'BRICS':
-                        dicionario['quantidade_de_certificado'] = dicionario['quantidade_de_certificado'] - cert_abcp
-        return saida
+                        if dicionario['quantidade_de_certificado'] > cert_abcp:
+                            dicionario['quantidade_de_certificado'] = dicionario['quantidade_de_certificado'] - cert_abcp
+        return saida 
+    
