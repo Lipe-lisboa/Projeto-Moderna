@@ -3,6 +3,11 @@ import re
 from unidecode import unidecode
 import regex
 
+from pyspark.sql import SparkSession as SS, functions as F
+from pyspark.errors.exceptions.captured import AnalysisException
+from pyspark.sql.functions import lpad, col
+from pyspark.sql.types import StringType
+
 def certificados_ocd(ocd_enviado,ano, mes):
     
     try:
@@ -89,7 +94,7 @@ def ocds(ano, mes):
 
     return list_ocds
 
-ocds(2024, 'janeiro')
+#ocds(2024, 'janeiro')
 
 
 def tipo_produto(ano,mes):
@@ -110,4 +115,45 @@ def tipo_produto(ano,mes):
     return list_tp_produto
 
 #print(tipo_produto(2024,'fevereiro'))
+
+
+def homologacao(ano,mes):
+    spark = SS.builder.appName( "Projeto" ).getOrCreate()
+    file = f'arquivos_parquet/{str(ano)}/certificados_de_{mes.lower()}.parquet'
+    
+    try:
+        df = spark.read.parquet(file)
+    except FileNotFoundError:
+        return "Arquivo não encontrado"
+    except AnalysisException as e:
+        return f"Erro ao tentar ler o arquivo Parquet: {e} "
+    
+    coluna_certificados = "Certificado de Conformidade Técnica"
+    coluna_nm_homologacao = "Número de Homologação"
+
+    # Converter a coluna para StringType e aplicar o padding
+    df_padronizado = df.withColumn(
+        coluna_nm_homologacao,  # Nome da coluna a ser editada
+        lpad(col(coluna_nm_homologacao).cast(StringType()), 12, "0")
+    )
+
+    print(f'qtd de linhas: {df_padronizado.count()}')
+    #df_padronizado.select(coluna_nm_homologacao).show(df_padronizado.count(), False) # Para visualizar o DataFrame resultante
+              
+                  
+    abreviacao_ano = str(ano)[2:4]
+
+    df_filtrado_inicial = df_padronizado.filter(F.substring(F.col(coluna_nm_homologacao), 6, 2) == abreviacao_ano)
+    
+    quantidade_certificados = df_filtrado_inicial.select(coluna_nm_homologacao).distinct().count()
+    print(f'qtd de certificações iniciais: {quantidade_certificados}')
+    
+    df_filtrado_ocd = df_filtrado_inicial.filter(F.col(coluna_certificados).contains('EL'))
+    quantidade_certificados = df_filtrado_ocd.select(coluna_certificados).distinct().count()
+    print(f'qtd certificados moderna inicial: {quantidade_certificados}')
+    
+    return df_padronizado
+
+homologacao(2024,'outubro')
+
 

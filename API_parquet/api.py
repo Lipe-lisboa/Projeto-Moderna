@@ -1,9 +1,12 @@
 from fastapi import FastAPI, Query
 from pyspark.sql import SparkSession as SS, functions as F
+from pyspark.errors.exceptions.captured import AnalysisException
+from pyspark.sql.functions import lpad, col
+from pyspark.sql.types import StringType
+
 import pandas as pd
 import regex
 import re
-from pyspark.errors.exceptions.captured import AnalysisException
 from typing import Optional
 
 def ocds(ano, mes):
@@ -14,8 +17,36 @@ def ocds(ano, mes):
         print("arquivo não encontrado")
         return
         
-
     list_ocds = []
+    
+    for certificado in df['Certificado de Conformidade Técnica']:
+        
+        
+        iniciais_certificado = certificado[0:2]
+        
+        if iniciais_certificado == '7C':
+            if iniciais_certificado not in list_ocds:
+                list_ocds.append(iniciais_certificado)
+        
+        #Deixa apenas letras e traço
+        ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado).strip('/- ')
+        
+
+        #Adiciona o ocd na lista de ocds
+        if ocd not in list_ocds:
+            if not 'TESTE' in ocd.upper() and len(ocd) > 1 and ocd != '':
+                list_ocds.append(ocd)
+
+    return list_ocds
+
+def certificados(ano, mes):
+    try:
+        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
+        
+    except FileNotFoundError:
+        print("arquivo não encontrado")
+        return
+        
     
     #lista de certificados com apenas numeros 
     lista_certificado_digitos = []
@@ -36,27 +67,18 @@ def ocds(ano, mes):
         if not contem_letra:
             if certificado not in lista_certificado_digitos:
                 lista_certificado_digitos.append(certificado)
-                
         
-        #Deixa apenas letras e traço
-        ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado).strip('/- ')
-        
+    return lista_certificado_digitos, qtd_total
 
-        #Adiciona o ocd na lista de ocds
-        if ocd not in list_ocds:
-            if not 'TESTE' in ocd.upper() and len(ocd) > 1 and ocd != '':
-                list_ocds.append(ocd)
-
-    return list_ocds, lista_certificado_digitos, qtd_total
-
-
-def tipo_certificado(ano, mes):
+def function_tipo_certificado(ano, mes):
     try:
         df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
         
     except FileNotFoundError:
         print("arquivo não encontrado")
         return
+    
+    abreviacao_ano = str(ano)[2:4]
     
     homolocacoes_iniciais = []
     qtd_caracteres = []
@@ -75,41 +97,21 @@ def tipo_certificado(ano, mes):
             numero_homologacao = (qtd_zero * '0')+numero_homologacao 
             
     
-        ano_certicado = f'{numero_homologacao[5]}{numero_homologacao[6]}'
+        ano_certicado = numero_homologacao[5:7]
         
-        if int(ano_certicado) > 24:
-            print(ano_certicado)
+        if int(ano_certicado) > int(abreviacao_ano):
+            print('ano do certificado:',ano_certicado)
             
 
             
-        if '24' == ano_certicado:
+        if abreviacao_ano == ano_certicado:
             if numero_homologacao not in homolocacoes_iniciais:
                 homolocacoes_iniciais.append(numero_homologacao)
                 qtd_homolocacoes_iniciais += 1
     
-    print(qtd_caracteres)
+    print('quantidade de caracteres:',qtd_caracteres)
     return qtd_homolocacoes_iniciais
             
-        
-    
-    
-    
-def tipo_produto(ano,mes):
-    try:
-        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
-        
-    except FileNotFoundError:
-        print("arquivo não encontrado")
-        return
-    
-    list_tp_produto = []
-    #adiciona itens em list_ocds e list_certificado
-    for produto in df['Tipo do Produto']:
-        
-        if produto not in list_tp_produto:
-            list_tp_produto.append(produto)
-
-    return list_tp_produto
 
 app = FastAPI()
 
@@ -145,7 +147,12 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
 
 
 @app.get("/certificados")
-def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, description="Opções de produto (separadas por vírgula)")):
+def certificados_ocds(
+    ano:int, 
+    mes:str, 
+    produtos: Optional[str] = Query(None, description="Opções de produto (separadas por vírgula)"),
+    tipo_certificado: Optional[str] = Query(None, description="Opções de tipo de ceritficado"),
+    ):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
     
     try:
@@ -156,11 +163,14 @@ def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, de
         return f"Erro ao tentar ler o arquivo Parquet: {e} "
 
     coluna_certificados = "Certificado de Conformidade Técnica"
+    coluna_nm_homologacao = "Número de Homologação"
 
-    lista_ocd, lista_certificado_digitos, qtd_total = ocds(ano, mes) 
     
-    inicial = tipo_certificado(ano, mes)
-    print(inicial)
+    lista_ocd = ocds(ano, mes) 
+#    lista_certificado_digitos, qtd_total  = certificados(ano, mes)
+    
+#    certificacao_inicial = function_tipo_certificado(ano, mes)
+#    print('qtd certificacoes iniciais:',certificacao_inicial)
 
     saida = []
 
@@ -177,10 +187,20 @@ def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, de
         'BRA': 'BR APPROVAL',
         'TELECOM': 'INTERTEK',
         'IBR': 'IBR TECH',
-        'TEL': 'ACTA'
+        'TEL': 'ACTA',
+        '7C': 'SEVEN COMPLIANCE'
     }
     
     if lista_ocd:
+        if tipo_certificado is not None:
+            abreviacao_ano = str(ano)[2:4]
+            
+            # Converter a coluna para StringType e aplicar o padding
+            df_padronizado = df.withColumn(
+                coluna_nm_homologacao,  # Nome da coluna a ser editada
+                lpad(col(coluna_nm_homologacao).cast(StringType()), 12, "0")
+            )
+
         for ocd in lista_ocd:
             if produtos is not None:
                 list_p = produtos.split(',')
@@ -191,11 +211,20 @@ def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, de
                     quantidade_certificados_list.append(df_filtrado.distinct().count())
              
                 quantidade_certificados = sum(quantidade_certificados_list)
+                
+            elif tipo_certificado is not None:
+
+                df_filtrado_inicial = df_padronizado.filter(F.substring(F.col(coluna_nm_homologacao), 6, 2) == abreviacao_ano)
+                quantidade_certificados = df_filtrado_inicial.select(coluna_nm_homologacao).distinct().count()
+                
+                df_filtrado_ocd = df_filtrado_inicial.filter(F.col(coluna_certificados).contains(ocd))
+                quantidade_certificados = df_filtrado_ocd.select(coluna_certificados).distinct().count()  
+                       
             else:
                 df_filtrado = df.filter(F.col(coluna_certificados).contains(ocd)).select(coluna_certificados)
                 quantidade_certificados = df_filtrado.distinct().count()
 
-            if quantidade_certificados != 0:
+            if quantidade_certificados:
                 if ocd in dict_name:
                     ocd = dict_name[ocd]
                 saida.append({
@@ -204,16 +233,16 @@ def certificados_ocds(ano:int, mes:str, produtos: Optional[str] = Query(None, de
                 })
             
             
-            if 'ABCP-OCD' in lista_ocd and 'OCD' in lista_ocd:
-                cert_abcp = 0
-                for dicionario in saida:
-                    if dicionario['ocd'] == 'ABCP':
-                        cert_abcp = dicionario['quantidade_de_certificado']
-                
-                for dicionario in saida:
-                    if dicionario['ocd'] == 'BRICS':
-                        if dicionario['quantidade_de_certificado'] > cert_abcp:
-                            dicionario['quantidade_de_certificado'] = dicionario['quantidade_de_certificado'] - cert_abcp
+        if 'ABCP-OCD' in lista_ocd and 'OCD' in lista_ocd:
+            cert_abcp = 0
+            for dicionario in saida:
+                if dicionario['ocd'] == 'ABCP':
+                    cert_abcp = dicionario['quantidade_de_certificado']
+            
+            for dicionario in saida:
+                if dicionario['ocd'] == 'BRICS':
+                    if dicionario['quantidade_de_certificado'] > cert_abcp:
+                        dicionario['quantidade_de_certificado'] = dicionario['quantidade_de_certificado'] - cert_abcp
         
         # Ordena a lista pelo valor (chave 'valor') em ordem decrescente
         saida_ordenada = sorted(saida, key=lambda item: item['quantidade_de_certificado'], reverse=True)        
