@@ -70,7 +70,7 @@ def certificados_ocd(ocd_enviado,ano, mes):
         
 
 #certificados_ocd('MODERNA', 2024, 'fevereiro')
-
+print('')
 
 def ocds(ano, mes):
     try:
@@ -94,8 +94,8 @@ def ocds(ano, mes):
 
     return list_ocds
 
-#ocds(2024, 'janeiro')
-
+#print(ocds(2024, 'janeiro'))
+print()
 
 def tipo_produto(ano,mes):
     try:
@@ -117,10 +117,12 @@ def tipo_produto(ano,mes):
 #print(tipo_produto(2024,'fevereiro'))
 
 
-def homologacao(ano,mes):
+def homologacao(ano:int,mes:str,tipo_de_servico: str, ocd:str):
     spark = SS.builder.appName( "Projeto" ).getOrCreate()
     file = f'arquivos_parquet/{str(ano)}/certificados_de_{mes.lower()}.parquet'
     
+    
+    #verificando arquivo
     try:
         df = spark.read.parquet(file)
     except FileNotFoundError:
@@ -128,32 +130,60 @@ def homologacao(ano,mes):
     except AnalysisException as e:
         return f"Erro ao tentar ler o arquivo Parquet: {e} "
     
+    
+    #nome das colunas que desejo verificar
     coluna_certificados = "Certificado de Conformidade Técnica"
     coluna_nm_homologacao = "Número de Homologação"
 
     # Converter a coluna para StringType e aplicar o padding
     df_padronizado = df.withColumn(
         coluna_nm_homologacao,  # Nome da coluna a ser editada
+        
+        #transforma a coluna para string e depois preenche 0 as que não tem 12 caracteres
         lpad(col(coluna_nm_homologacao).cast(StringType()), 12, "0")
     )
+
 
     print(f'qtd de linhas: {df_padronizado.count()}')
     #df_padronizado.select(coluna_nm_homologacao).show(df_padronizado.count(), False) # Para visualizar o DataFrame resultante
               
-                  
+               
+    #pega os dois ultimos numeros do ano enviado   
     abreviacao_ano = str(ano)[2:4]
 
-    df_filtrado_inicial = df_padronizado.filter(F.substring(F.col(coluna_nm_homologacao), 6, 2) == abreviacao_ano)
     
-    quantidade_certificados = df_filtrado_inicial.select(coluna_nm_homologacao).distinct().count()
-    print(f'qtd de certificações iniciais: {quantidade_certificados}')
-    
-    df_filtrado_ocd = df_filtrado_inicial.filter(F.col(coluna_certificados).contains('EL'))
-    quantidade_certificados = df_filtrado_ocd.select(coluna_certificados).distinct().count()
-    print(f'qtd certificados moderna inicial: {quantidade_certificados}')
-    
+    if tipo_de_servico.lower() == "inicial":
+        #filtra o df para que selecione apenas as homologações que contem os digititos do ano enviado (abreviacao_ano)
+        df_filtrado_inicial = df_padronizado.filter(F.substring(F.col(coluna_nm_homologacao), 6, 2) == abreviacao_ano)
+        
+        #conta a quantidade de certificados
+        quantidade_certificados_iniciais = df_filtrado_inicial.select(coluna_nm_homologacao).distinct().count()
+        print(f'qtd de certificações iniciais: {quantidade_certificados_iniciais}')
+        
+        #filtra para que selecione apenas os certificados da moderna
+        df_filtrado_ocd = df_filtrado_inicial.filter(F.col(coluna_certificados).contains(ocd.upper()))
+        quantidade_certificados_iniciais = df_filtrado_ocd.select(coluna_certificados).distinct().count()
+        print(f'qtd de certificações iniciais {ocd}: {quantidade_certificados_iniciais}')
+        
+    elif tipo_de_servico.lower() == "manutenção":
+        #filtra o df para que selecione apenas as homologações que contem os digititos do ano enviado (abreviacao_ano)
+        df_filtrado_manutencao = df_padronizado.filter(F.substring(F.col(coluna_nm_homologacao), 6, 2) != abreviacao_ano)
+        
+        #conta a quantidade de certificados
+        quantidade_certificados_manutencao = df_filtrado_manutencao.select(coluna_nm_homologacao).distinct().count()
+        print(f'qtd de manutenções: {quantidade_certificados_manutencao}')
+        
+        #filtra para que selecione apenas os certificados da moderna
+        df_filtrado_ocd = df_filtrado_manutencao.filter(F.col(coluna_certificados).contains(ocd.upper()))
+        quantidade_certificados_manutencao = df_filtrado_ocd.select(coluna_certificados).distinct().count()
+        print(f'qtd de manutencões {ocd}: {quantidade_certificados_manutencao}')
+        
+    else:
+        print("Tipo de serviço não encontrado")
+            
+            
     return df_padronizado
 
-homologacao(2024,'outubro')
+homologacao(2024,'outubro',"manutenção","moderna")
 
 
