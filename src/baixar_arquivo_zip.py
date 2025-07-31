@@ -15,6 +15,6 @@ def baixar_arquivo(url:str, nome_arquivo:str):
 
 
 url_do_arquivo = 'https://www.anatel.gov.br/dadosabertos/paineis_de_dados/certificacao_de_produtos/produtos_certificados.zip' # url do arquivo zip
-caminho_do_arquivo = '../docs/produtos_certificados.zip' # nome para o arquivo
+caminho_do_arquivo = 'docs/produtos_certificados.zip' # nome para o arquivo
 
-baixar_arquivo(url_do_arquivo, caminho_do_arquivo)
+#baixar_arquivo(url_do_arquivo, caminho_do_arquivo)

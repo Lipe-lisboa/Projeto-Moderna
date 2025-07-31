@@ -21,5 +21,5 @@ def extrair(zip_path:str):
         else:
             print("Nenhum arquivo CSV encontrado no ZIP.")
 
-extrair(zip_path)
+#extrair(zip_path)
         
