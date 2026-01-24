@@ -38,6 +38,10 @@ Para fazer as requisições HTTP abaixo, foi utilizada a ferramenta [Insomnia](h
  ```
 http://127.0.0.1:8000/criar parquets?ano=2025
 
+{
+	"message": "Arquivos Parquet para o ano 2025 foram criados com sucesso."
+}
+
   ```
 
 
@@ -48,88 +52,28 @@ http://127.0.0.1:8000/certificados?ano=2025&mes=JANEIRO
 
 [
 	{
-		"ocd": "NCC",
-		"quantidade_de_certificado": 104
+		"ocd": "MODERNA",
+		"quantidade_de_certificado": xxx
 	},
 	{
-		"ocd": "MODERNA",
-		"quantidade_de_certificado": 82
+		"ocd": "NCC",
+		"quantidade_de_certificado": xxx
 	},
 	{
 		"ocd": "ICC",
-		"quantidade_de_certificado": 56
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "CPQD",
-		"quantidade_de_certificado": 51
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "BRACERT",
-		"quantidade_de_certificado": 31
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "MASTER",
-		"quantidade_de_certificado": 25
-	},
-	{
-		"ocd": "DEKRA",
-		"quantidade_de_certificado": 23
-	},
-	{
-		"ocd": "UL",
-		"quantidade_de_certificado": 22
-	},
-	{
-		"ocd": "OCPTELLI",
-		"quantidade_de_certificado": 18
-	},
-	{
-		"ocd": "PCN",
-		"quantidade_de_certificado": 17
-	},
-	{
-		"ocd": "VERSYS",
-		"quantidade_de_certificado": 13
-	},
-	{
-		"ocd": "ELDORADO",
-		"quantidade_de_certificado": 13
-	},
-	{
-		"ocd": "ABCP",
-		"quantidade_de_certificado": 11
-	},
-	{
-		"ocd": "TUV",
-		"quantidade_de_certificado": 10
-	},
-	{
-		"ocd": "CCPE",
-		"quantidade_de_certificado": 9
-	},
-	{
-		"ocd": "QCCERT",
-		"quantidade_de_certificado": 8
-	},
-	{
-		"ocd": "BR APPROVAL",
-		"quantidade_de_certificado": 3
-	},
-	{
-		"ocd": "CTCP",
-		"quantidade_de_certificado": 3
-	},
-	{
-		"ocd": "BRICS",
-		"quantidade_de_certificado": 3
-	},
-	{
-		"ocd": "ACTA",
-		"quantidade_de_certificado": 2
-	},
-	{
-		"ocd": "LMP",
-		"quantidade_de_certificado": 1
+		"quantidade_de_certificado": xx
 	}
 ]
 ```
@@ -141,84 +85,28 @@ http://127.0.0.1:8000/certificados?ano=2025&mes=JANEIRO&tipo_certificado=inicial
 
 [
 	{
-		"ocd": "NCC",
-		"quantidade_de_certificado": 67
+		"ocd": "MODERNA",
+		"quantidade_de_certificado": xxx
 	},
 	{
-		"ocd": "MODERNA",
-		"quantidade_de_certificado": 47
+		"ocd": "NCC",
+		"quantidade_de_certificado": xxx
 	},
 	{
 		"ocd": "ICC",
-		"quantidade_de_certificado": 34
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "CPQD",
-		"quantidade_de_certificado": 27
-	},
-	{
-		"ocd": "PCN",
-		"quantidade_de_certificado": 14
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "BRACERT",
-		"quantidade_de_certificado": 10
-	},
-	{
-		"ocd": "VERSYS",
-		"quantidade_de_certificado": 8
-	},
-	{
-		"ocd": "UL",
-		"quantidade_de_certificado": 8
+		"quantidade_de_certificado": xx
 	},
 	{
 		"ocd": "MASTER",
-		"quantidade_de_certificado": 7
-	},
-	{
-		"ocd": "TUV",
-		"quantidade_de_certificado": 7
-	},
-	{
-		"ocd": "CCPE",
-		"quantidade_de_certificado": 6
-	},
-	{
-		"ocd": "QCCERT",
-		"quantidade_de_certificado": 5
-	},
-	{
-		"ocd": "DEKRA",
-		"quantidade_de_certificado": 4
-	},
-	{
-		"ocd": "OCPTELLI",
-		"quantidade_de_certificado": 3
-	},
-	{
-		"ocd": "ELDORADO",
-		"quantidade_de_certificado": 2
-	},
-	{
-		"ocd": "BR APPROVAL",
-		"quantidade_de_certificado": 2
-	},
-	{
-		"ocd": "CTCP",
-		"quantidade_de_certificado": 2
-	},
-	{
-		"ocd": "ABCP",
-		"quantidade_de_certificado": 1
-	},
-	{
-		"ocd": "LMP",
-		"quantidade_de_certificado": 1
-	},
-	{
-		"ocd": "BRICS",
-		"quantidade_de_certificado": 1
+		"quantidade_de_certificado": xx
 	}
 ]
 ```
@@ -231,6 +119,6 @@ http://127.0.0.1:8000/certificados/MODERNA?ano=2025&mes=JANEIRO
 
 {
 	"ocd": "MODERNA",
-	"quantidade_de_certificado": 82
+	"quantidade_de_certificado": xx
 }
 ```
