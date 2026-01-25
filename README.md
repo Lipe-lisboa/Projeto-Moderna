@@ -36,10 +36,12 @@ Para fazer as requisições HTTP abaixo, foi utilizada a ferramenta [Insomnia](h
 
 - Criar arquivos parquets
  ```
-http://127.0.0.1:8000/criar parquets?ano=2025
+http://127.0.0.1:8000/criar-parquets?ano=2025
 
 {
-	"message": "Arquivos Parquet para o ano 2025 foram criados com sucesso."
+	"status": "Success",
+	"mensagem": "Arquivos Parquet para o ano 2025 foram criados com sucesso.",
+	"result": "Processamento do ano 2025 concluído com sucesso!"
 }
 
   ```
@@ -50,67 +52,25 @@ http://127.0.0.1:8000/criar parquets?ano=2025
 http://127.0.0.1:8000/certificados?ano=2025&mes=JANEIRO
 
 
-[
-	{
-		"ocd": "MODERNA",
-		"quantidade_de_certificado": xxx
-	},
-	{
-		"ocd": "NCC",
-		"quantidade_de_certificado": xxx
-	},
-	{
-		"ocd": "ICC",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "CPQD",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "BRACERT",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "MASTER",
-		"quantidade_de_certificado": xx
-	}
-]
+{
+	"status": "Success",
+	"mensagem": "Contagem de certificados para o ano 2025 e mês JANEIRO obtida com sucesso.",
+	"result": [
+		{
+			"ocd": "MODERNA",
+			"quantidade_de_certificado": XXX
+		},
+		{
+			"ocd": "NCC",
+			"quantidade_de_certificado": XX
+		},
+		{
+			"ocd": "ICC",
+			"quantidade_de_certificado": XX
+		}
+	]
+}
 ```
-
-- Certificados OCDS com filtro de "tipo_certificado"
-```
-http://127.0.0.1:8000/certificados?ano=2025&mes=JANEIRO&tipo_certificado=inicial
-
-
-[
-	{
-		"ocd": "MODERNA",
-		"quantidade_de_certificado": xxx
-	},
-	{
-		"ocd": "NCC",
-		"quantidade_de_certificado": xxx
-	},
-	{
-		"ocd": "ICC",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "CPQD",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "BRACERT",
-		"quantidade_de_certificado": xx
-	},
-	{
-		"ocd": "MASTER",
-		"quantidade_de_certificado": xx
-	}
-]
-```
-
 
 - Certificados OCD Moderna
 ```
@@ -118,7 +78,13 @@ http://127.0.0.1:8000/certificados/MODERNA?ano=2025&mes=JANEIRO
 
 
 {
-	"ocd": "MODERNA",
-	"quantidade_de_certificado": xx
+	"status": "Success",
+	"mensagem": "Contagem de certificados para o ano 2025 e mês JANEIRO obtida com sucesso.",
+	"result": [
+		{
+			"ocd": "MODERNA",
+			"quantidade_de_certificado": XX
+		}
+	]
 }
 ```
