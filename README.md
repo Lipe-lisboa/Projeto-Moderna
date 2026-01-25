@@ -4,7 +4,7 @@
 
 <p align="center">
  <img src="https://img.shields.io/static/v1?label=Instagram&message=@filipe_lisboa07&color=8257E5&labelColor=000000" alt="@filipe_lisboa07" />
- <img src="https://img.shields.io/static/v1?label=Tipo&message=Desafio&color=8257E5&labelColor=000000" alt="Automação" />
+ <img src="https://img.shields.io/static/v1?label=Tipo&message=Automacao&color=8257E5&labelColor=000000" alt="Automação" />
 </p>
 
 API criada para o Market Share do OCD (Organismo de Certificação Designado) Moderna Tecnologia.
