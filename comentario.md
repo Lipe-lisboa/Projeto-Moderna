@@ -55,3 +55,21 @@ POST:
 Utilizado para enviar dados para o servidor, geralmente para criar um novo recurso.
 Exemplo: criar um novo usuário, adicionar um novo produto.
 
+
+PROJETO-MODERNA/
+├── data/                       # Onde ficam seus CSVs e Parquets (fora da src)
+│   ├── raw/
+│   └── processed/
+├── src/
+│   ├── core/                   # Configurações globais
+│   ├── services/               # Seus scripts atuais (a lógica de negócio)
+│   │   ├── downloader.py       # (antigo baixar_arquivo_zip.py)
+│   │   ├── processor.py        # (antigo dividir_converter_csv_mes.py)
+│   │   └── extractor.py        # (antigo extrair_csv.py)
+│   ├── api/                    # Onde o FastAPI mora
+│   │   ├── routers/
+│   │   │   └── data_routes.py  # Rotas que chamam os serviços
+│   │   └── main.py             # Instância do FastAPI
+│   └── utils/                  # Funções genéricas (seu functios.py)
+├── requirements.txt
+└── .gitignore
