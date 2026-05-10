@@ -22,6 +22,7 @@ API criada para o Market Share do OCD (Organismo de Certificação Designado) Mo
 - Para executar a aplicação entre no diretorio em que a API se encontra (src):
 
 ```
+cd backend
 cd src    
 uvicorn api:app --reload
 ```
