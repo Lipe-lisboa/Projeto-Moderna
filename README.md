@@ -18,7 +18,10 @@ API criada para o Market Share do OCD (Organismo de Certificação Designado) Mo
 ## Como Executar
 
 - Clonar repositório git
-
+- Renomeie a pasta arquivos_parquet_exemplo (retire o "exemplo")
+```
+arquivos_parquet_exemplo -> arquivos_parquet
+```
 - Para executar a aplicação entre no diretorio em que a API se encontra (src):
 
 ```
