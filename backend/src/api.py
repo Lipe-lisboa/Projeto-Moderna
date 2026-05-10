@@ -45,7 +45,7 @@ def criar_parquets(
 def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     
     try:
-        dados = processor.contar_certificados(ano, mes, ocd_enviado)
+        dados = processor.contar_certificados(ano, mes, ocd_enviado.upper())
 
         if dados is None:
             raise HTTPException(
