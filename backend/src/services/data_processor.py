@@ -86,7 +86,7 @@ class DataProcessor:
 
                     # Define o caminho do arquivo de saída
                     arquivo_saida = pasta_ano / f"certificados_de_{mes_name}.parquet"
-                    pandas_df.to_parquet(arquivo_saida, index=False)
+                    pandas_df.to_parquet(arquivo_saida, index=False, coerce_timestamps='us')
                     print(f"Gerado: {arquivo_saida.name}")
 
             spark.stop()
@@ -100,6 +100,9 @@ class DataProcessor:
     def contar_certificados(self, ano:int, mes:str, ocd_enviado: Optional[str] = None):
 
         spark = SS.builder.appName( "Projeto" ).getOrCreate()
+
+        spark.conf.set("spark.sql.parquet.enableVectorizedReader", "false")
+
         path = self.parquet_base_dir / str(ano) / f"certificados_de_{mes}.parquet"
         
         try:
