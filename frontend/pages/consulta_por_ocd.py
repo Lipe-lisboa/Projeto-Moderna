@@ -14,6 +14,11 @@ mes_o = st.selectbox(
     key="mes_o")
 
 if st.button("Buscar OCD"):
+
+    if not ocd_nome:
+        st.warning("Por favor, digite o nome da OCD para realizar a consulta.")
+        st.stop()  # Para a execução se o nome da OCD não for fornecido     
+
     # 1. Monta a URL com os parâmetros que o usuário escolheu
     url_completa = f"{API_URL}/certificados/{ocd_nome.upper()}?ano={ano_o}&mes={mes_o}"
 
