@@ -66,7 +66,10 @@ class DataProcessor:
                 sep=";", # Separador de campos
                 inferSchema=True, # Infere o esquema dos dados
                 encoding='utf-8', # Codificação dos dados
-            )
+            ).select(*[
+                         "Data do Certificado de Conformidade Técnica",
+                         "Certificado de Conformidade Técnica"
+                ]) # Seleciona apenas as colunas necessárias 
 
             # Cria a pasta de saída para o ano, se não existir
             pasta_ano = self.root_dir / "arquivos_parquet" / str(ano) # Define o caminho da pasta do ano
