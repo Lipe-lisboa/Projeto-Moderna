@@ -2,6 +2,7 @@ import streamlit as st
 from utils import LISTA_MESES, API_URL
 import requests
 import pandas as pd
+import plotly.express as px
 
 st.header("Quantidade de Certificados por OCD")
 
@@ -11,6 +12,7 @@ mes_g = st.selectbox(
     LISTA_MESES,
     key="mes_g"
 )
+numero_de_ocds = st.slider("Número de OCDs que deseja visualizar", min_value=1, max_value=25, value=10, key="num_ocds")
 
 if st.button("Consultar Geral"):
 # 1. Monta a URL com os parâmetros que o usuário escolheu
@@ -25,22 +27,33 @@ if st.button("Consultar Geral"):
                 dados = response.json()["result"]
                 
                 # 3. Transforma o JSON em um DataFrame do Pandas para exibir
-                df = pd.DataFrame(dados).head(25)
+                df = pd.DataFrame(dados)
+                df_total = df.head(numero_de_ocds)
+                df_top3 = df.head(3)
+                outros_valores = df.iloc[3:].sum()
                 
                 # 4. Exibe os resultados de forma bonita
                 st.success(f"Dados de {mes_g}/{ano_g} carregados!")
                 
                 # Mostra uma tabela
-                st.dataframe(df, use_container_width=True)
+                st.dataframe(df_total, use_container_width=True)
                 
                 # Cria um gráfico automático usando a coluna 'ocd' e 'quantidade_de_certificado'
                 st.subheader("Gráfico de Quantidade de Certificados por OCD")
                 st.bar_chart(
-                    data=df.set_index("ocd"),
+                    data=df_total.set_index("ocd"),
                     x_label="OCD",
                     y_label="Quantidade de Certificados"
                     )
                 
+                st.subheader(f"Top 3 OCDs com mais certificados")
+
+                # Cria o dataframe para a Pizza
+                df_pizza = pd.concat([df_top3, pd.DataFrame([{'ocd': 'OUTROS', 'quantidade_de_certificado': outros_valores['quantidade_de_certificado']}])])
+
+                fig = px.pie(df_pizza, values='quantidade_de_certificado', names='ocd')
+                st.plotly_chart(fig)
+
             else:
                 st.error(f"Erro na API: {response.status_code}")
         
