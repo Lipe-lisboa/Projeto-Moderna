@@ -1,8 +1,5 @@
 import os
-from pyspark.sql import SparkSession as SS
-from pyspark.sql.functions import col
 import pandas as pd
-import pyspark.sql.functions as F
 from pyspark.errors.exceptions.captured import AnalysisException
 from utils.functios import ocds
 from typing import Optional
@@ -56,20 +53,18 @@ class DataProcessor:
             return
         
         try:
-            # Inicializa a Spark Session
-            spark = SS.builder.appName("AnatelProcessor").getOrCreate()
 
-            # Lê o CSV usando Spark
-            df = spark.read.csv(
-                str(csv_file_path), # Convertendo Path para string
-                header=True, # Indica que o CSV tem cabeçalho
-                sep=";", # Separador de campos
-                inferSchema=True, # Infere o esquema dos dados
-                encoding='utf-8', # Codificação dos dados
-            ).select(*[
-                         "Data do Certificado de Conformidade Técnica",
-                         "Certificado de Conformidade Técnica"
-                ]) # Seleciona apenas as colunas necessárias 
+            # Lê o CSV usando Pandas para garantir a leitura correta dos dados, especialmente com encoding e separadores
+            df = pd.read_csv(
+                    csv_file_path, 
+                    sep=";", 
+                    encoding='utf-8',
+                    usecols=["Data do Certificado de Conformidade Técnica", "Certificado de Conformidade Técnica"]
+                )
+            
+            # Converte a coluna para datetime (evita erros de texto)
+            col_data = "Data do Certificado de Conformidade Técnica"
+            df[col_data] = pd.to_datetime(df[col_data], dayfirst=True, errors='coerce')
 
             # Cria a pasta de saída para o ano, se não existir
             pasta_ano = self.root_dir / "arquivos_parquet" / str(ano) # Define o caminho da pasta do ano
@@ -77,46 +72,37 @@ class DataProcessor:
 
             # Filtra e salva os dados por mês
             for mes_name, mes_cod in self.lista_mes.items():
-                filtro = f'{mes_cod}/{str(ano)}' # Formato esperado no campo de data
-                # Filtragem no Spark
-                df_filtrado = df.filter(col("Data do Certificado de Conformidade Técnica").contains(filtro))
-                dados = df_filtrado.collect()
+                mes_int = int(mes_cod)
+                
+                # Filtragem do DataFrame para o mês e ano específicos
+                df_mes = df[(df[col_data].dt.month == mes_int) & (df[col_data].dt.year == ano)]
 
                 # Se houver dados, converte e salva
-                if len(dados) != 0:
-                    # Converte diretamente para Pandas (Spark já tem o método .toPandas())
-                    pandas_df = pd.DataFrame(dados, columns=df_filtrado.columns)
-
+                if not df_mes.empty:
+                    print(f"Processando {mes_name} de {ano}...")
                     # Define o caminho do arquivo de saída
                     arquivo_saida = pasta_ano / f"certificados_de_{mes_name}.parquet"
-                    pandas_df.to_parquet(arquivo_saida, index=False, coerce_timestamps='us')
+
+                    # Converte o DataFrame do Pandas para Parquet usando o método to_parquet
+                    df_mes.to_parquet(arquivo_saida, index=False)
                     print(f"Gerado: {arquivo_saida.name}")
 
-            spark.stop()
             return f"Processamento do ano {ano} concluído com sucesso!"
 
         except Exception as e:
-            if 'spark' in locals(): 
-                spark.stop()
-            return f"Erro no processamento Spark/Parquet: {e}"
+            return f"Erro no processamento Pandas/Parquet: {e}"
 
     def contar_certificados(self, ano:int, mes:str, ocd_enviado: Optional[str] = None):
-
-        spark = SS.builder.appName( "Projeto" ).getOrCreate()
-
-        spark.conf.set("spark.sql.parquet.enableVectorizedReader", "false")
 
         path = self.parquet_base_dir / str(ano) / f"certificados_de_{mes}.parquet"
         
         try:
-            df = spark.read.parquet(str(path))
+            df = pd.read_parquet(path) # Lê o arquivo Parquet usando Pandas
 
         except FileNotFoundError:
             return "arquivo não encontrado"
         except AnalysisException as e:
             return f"Erro ao tentar ler o arquivo Parquet: {e} "
-
-        coluna = "Certificado de Conformidade Técnica"
 
         if ocd_enviado is not None:
             lista_ocd = [ocd_enviado]
@@ -125,12 +111,15 @@ class DataProcessor:
 
         saida = {}
 
+        coluna = "Certificado de Conformidade Técnica"
+
         if lista_ocd:
 
             for ocd in lista_ocd:
 
-                df_filtrado = df.filter(F.col(coluna).contains(ocd)).select(coluna)
-                quantidade_certificados = df_filtrado.distinct().count()
+                df_filtrado = df[df[coluna].str.contains(ocd, na=False)] # Filtra o DataFrame para o OCD atual, ignorando valores nulos
+                quantidade_certificados = df_filtrado[coluna].nunique() # Conta o número de certificados únicos para o OCD atual
+
 
                 # Verifica se há certificados para o OCD atual
                 if quantidade_certificados:
@@ -153,5 +142,4 @@ class DataProcessor:
         # Ordena a lista pelo valor (chave 'valor') em ordem decrescente
         dados = sorted(resultado, key=lambda item: item['quantidade_de_certificado'], reverse=True)        
         
-        spark.stop()
         return dados
