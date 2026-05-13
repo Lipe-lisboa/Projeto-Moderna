@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from pyspark.errors.exceptions.captured import AnalysisException
 from utils.functios import ocds
 from typing import Optional
 
@@ -99,7 +98,7 @@ class DataProcessor:
 
         except FileNotFoundError:
             return "arquivo não encontrado"
-        except AnalysisException as e:
+        except Exception as e:
             return f"Erro ao tentar ler o arquivo Parquet: {e} "
 
         if ocd_enviado is not None:
