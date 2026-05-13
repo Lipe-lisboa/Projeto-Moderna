@@ -34,7 +34,12 @@ if st.button("Consultar Geral"):
                 st.dataframe(df, use_container_width=True)
                 
                 # Cria um gráfico automático usando a coluna 'ocd' e 'quantidade_de_certificado'
-                st.bar_chart(df.set_index("ocd"))
+                st.subheader("Gráfico de Quantidade de Certificados por OCD")
+                st.bar_chart(
+                    data=df.set_index("ocd"),
+                    x_label="OCD",
+                    y_label="Quantidade de Certificados"
+                    )
                 
             else:
                 st.error(f"Erro na API: {response.status_code}")
