@@ -3,6 +3,7 @@ csv_X_parquet.png
 comandos.md
 comentario.md
 backend/arquivos_parquet/
+backend/docs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
