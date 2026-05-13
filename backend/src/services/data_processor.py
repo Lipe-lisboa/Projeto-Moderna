@@ -79,13 +79,11 @@ class DataProcessor:
 
                 # Se houver dados, converte e salva
                 if not df_mes.empty:
-                    print(f"Processando {mes_name} de {ano}...")
                     # Define o caminho do arquivo de saída
                     arquivo_saida = pasta_ano / f"certificados_de_{mes_name}.parquet"
 
                     # Converte o DataFrame do Pandas para Parquet usando o método to_parquet
                     df_mes.to_parquet(arquivo_saida, index=False)
-                    print(f"Gerado: {arquivo_saida.name}")
 
             return f"Processamento do ano {ano} concluído com sucesso!"
 
