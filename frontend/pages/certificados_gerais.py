@@ -29,11 +29,11 @@ if st.button("Consultar Geral"):
                 # 3. Transforma o JSON em um DataFrame do Pandas para exibir
                 df = pd.DataFrame(dados)
                 df_total = df.head(numero_de_ocds)
-                df_top3 = df.head(3)
-                outros_valores = df.iloc[3:].sum()
+                df_top5 = df.head(5)
+                outros_valores = df.iloc[5:].sum()
                 
                 # 4. Exibe os resultados de forma bonita
-                st.success(f"Dados de {mes_g}/{ano_g} carregados!")
+                st.success(f"Dados de {mes_g.capitalize()} de {ano_g} carregados!")
                 
                 # Mostra uma tabela
                 st.dataframe(df_total, use_container_width=True)
@@ -46,10 +46,10 @@ if st.button("Consultar Geral"):
                     y_label="Quantidade de Certificados"
                     )
                 
-                st.subheader(f"Top 3 OCDs com mais certificados")
+                st.subheader(f"Top 5 OCDs com mais certificados")
 
                 # Cria o dataframe para a Pizza
-                df_pizza = pd.concat([df_top3, pd.DataFrame([{'ocd': 'OUTROS', 'quantidade_de_certificado': outros_valores['quantidade_de_certificado']}])])
+                df_pizza = pd.concat([df_top5, pd.DataFrame([{'ocd': 'OUTROS', 'quantidade_de_certificado': outros_valores['quantidade_de_certificado']}])])
 
                 fig = px.pie(df_pizza, values='quantidade_de_certificado', names='ocd')
                 st.plotly_chart(fig)
