@@ -58,7 +58,11 @@ class DataProcessor:
                     csv_file_path, 
                     sep=";", 
                     encoding='utf-8',
-                    usecols=["Data do Certificado de Conformidade Técnica", "Certificado de Conformidade Técnica"]
+                    usecols=[
+                        "Data do Certificado de Conformidade Técnica",
+                        "Certificado de Conformidade Técnica",
+                        "Número de Homologação"
+                    ]
                 )
             
             # Converte a coluna para datetime (evita erros de texto)
@@ -116,7 +120,8 @@ class DataProcessor:
 
                 df_filtrado = df[df[coluna].str.contains(ocd, na=False)] # Filtra o DataFrame para o OCD atual, ignorando valores nulos
                 quantidade_certificados = df_filtrado[coluna].nunique() # Conta o número de certificados únicos para o OCD atual
-
+                print(f"OCD: {ocd}, Quantidade de Certificados: {quantidade_certificados}")
+                print()
 
                 # Verifica se há certificados para o OCD atual
                 if quantidade_certificados:
@@ -130,6 +135,17 @@ class DataProcessor:
             if saida['BRICS'] > saida['ABCP']:
                 saida['BRICS'] -= saida['ABCP'] # Remove a contagem de ABCP de BRICS
 
+        # Lógica específica CPQD + CPQD-I
+        if 'CPQD' in saida and 'CPQD-I' in saida:
+            saida['CPQD'] += saida['CPQD-I'] # Adiciona a contagem de CPQD-I à contagem de CPQD
+            saida.pop('CPQD-I') # Remove a entrada de CPQD-I do dicionário
+
+        if 'OCP-I' in saida and 'OCPTELLI' in saida:
+            saida['OCPTELLI'] += saida['OCP-I'] # Adiciona a contagem de OCP-I à contagem de OCPTELLI
+            saida.pop('OCP-I') # Remove a entrada de OCP-I do dicionário
+        elif 'OCP-I' in saida and 'OCPTELLI' not in saida:
+            saida['OCPTELLI'] = saida.pop('OCP-I') # Renomeia OCP-I para OCPTELLI se OCPTELLI não existir
+
         # transforma o dicionário em uma lista de dicionários
         resultado = [
                 {"ocd": k, "quantidade_de_certificado": v} 
@@ -137,6 +153,6 @@ class DataProcessor:
             ]
         
         # Ordena a lista pelo valor (chave 'valor') em ordem decrescente
-        dados = sorted(resultado, key=lambda item: item['quantidade_de_certificado'], reverse=True)        
+        dados = sorted(resultado, key=lambda item: item['quantidade_de_certificado'], reverse=True)      
         
         return dados
