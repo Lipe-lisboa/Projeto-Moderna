@@ -87,6 +87,7 @@ Gera os arquivos no formato Parquet com base no ano fornecido.
 
 	POST [http://127.0.0.1:8000/criar-parquets?ano=2026](http://127.0.0.1:8000/criar-parquets?ano=2026)
 
+</details>
 
 
 
@@ -128,10 +129,10 @@ Retorna a listagem e contagem de certificados de todas as OCDs com base no ano e
 
 	GET [http://127.0.0.1:8000/certificados?ano=2026&mes=JANEIRO](http://127.0.0.1:8000/certificados?ano=2026&mes=JANEIRO)
 
+</details>
 
-
-### 2. Contagem Geral de Certificados por OCD
-Retorna a listagem e contagem de certificados de todas as OCDs com base no ano e mês informados.
+### 3. Filtrar Certificados de uma OCD Específica
+Retorna a quantidade de certificados emitidos por uma organização específica (ex: MODERNA), filtrando por ano e mês.
 
 * **Método:** `GET`
 * **URL:** `http://127.0.0.1:8000/certificados/{OCD}`
@@ -160,3 +161,5 @@ Retorna a listagem e contagem de certificados de todas as OCDs com base no ano e
 **Exemplo de Requisição:**
 
 	GET [http://127.0.0.1:8000/certificados/MODERNA?ano=2026&mes=JANEIRO](http://127.0.0.1:8000/certificados/MODERNA?ano=2026&mes=JANEIRO)
+
+</details>
