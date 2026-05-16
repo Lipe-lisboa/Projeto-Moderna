@@ -12,83 +12,151 @@ API criada para o Market Share do OCD (Organismo de Certificação Designado) Mo
 ## Tecnologias
 
 - [FastAPI](https://fastapi.tiangolo.com/#requirements)
-- [PysPark](https://spark.apache.org/docs/latest/api/python/index.html)
+- [Pandas](https://pandas.pydata.org/docs/)
+- [Streamlit](https://docs.streamlit.io/)
 
+## 🚀 Como Executar o Projeto
 
-## Como Executar
+1. Clonar repositório git
+	```bash
+	git clone https://github.com/Lipe-lisboa/Projeto-Moderna.git
 
-- Clonar repositório git
-- Renomeie a pasta arquivos_parquet_exemplo (retire o "exemplo")
-```
-arquivos_parquet_exemplo -> arquivos_parquet
-```
+2. Crie um ambiente virtual e faça o dowload das bibliotecas necessárias
+	```bash 
+	pip install -r requirements.txt
+	
+
+3. Renomeie a pasta de exemplos para que o sistema reconheça os arquivos de dados
+	```bash
+	Altere o nome de arquivos_parquet_exemplo para arquivos_parquet
+
+## 🛠️ Inicializando a Aplicação
 - Para executar a aplicação entre no diretorio em que a API se encontra (src):
 
-```
-cd backend
-cd src    
-uvicorn api:app --reload
-```
+	```bash
+	cd backend
+	cd src    
+	uvicorn api:app --reload
+	
 
-A API poderá ser acessada em [127.0.0.1:8000](http://127.0.0.1:8000).
-O Swagger poderá ser visualizado em [127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+### 🎨 Executando o Frontend (Streamlit)
 
-## API Endpoints
+Com a API já em execução, **abra uma nova aba ou janela do seu terminal** e siga os passos abaixo:
 
-Para fazer as requisições HTTP abaixo, foi utilizada a ferramenta [Insomnia](https://insomnia.rest/):
+1. Entre no diretório do frontend:
+   ```bash
+   cd frontend
+2. Execute a aplicação do Streamlit:
+   ```bash
+   streamlit run app.py
+
+O dashboard em Streamlit abrirá automaticamente no seu navegador pelo endereço: http://localhost:8501
+
+Vc também pode acessar a API em [127.0.0.1:8000](http://127.0.0.1:8000). O Swagger poderá ser visualizado em [127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 
-- Criar arquivos parquets
- ```
-http://127.0.0.1:8000/criar-parquets?ano=2025
 
+## 🔌 API Endpoints
+
+Abaixo estão listados os principais endpoints da API. Você pode testar essas requisições utilizando ferramentas como [Insomnia](https://insomnia.rest/), [Postman](https://www.postman.com/) ou diretamente pela documentação interativa do Swagger em `http://127.0.0.1:8000/docs`.
+
+---
+
+
+### 1. Criar Arquivos Parquet
+Gera os arquivos no formato Parquet com base no ano fornecido.
+
+* **Método:** `POST`
+* **URL:** `http://127.0.0.1:8000/criar-parquets`
+* **Parâmetros de Query:**
+  * `ano` (obrigatório): O ano que deseja processar (Ex: `2026`).
+
+<details>
+<summary><b>▶ Ver Exemplo de Resposta (200 OK)</b></summary>
+
+```json
 {
-	"status": "Success",
-	"mensagem": "Arquivos Parquet para o ano 2025 foram criados com sucesso.",
-	"result": "Processamento do ano 2025 concluído com sucesso!"
+    "status": "Success",
+    "mensagem": "Arquivos Parquet para o ano 2026 foram criados com sucesso.",
+    "result": "Processamento do ano 2026 concluído com sucesso!"
+}
+
+```
+
+**Exemplo de Requisição:**
+
+	POST [http://127.0.0.1:8000/criar-parquets?ano=2026](http://127.0.0.1:8000/criar-parquets?ano=2026)
+
+
+
+
+### 2. Contagem Geral de Certificados por OCD
+Retorna a listagem e contagem de certificados de todas as OCDs com base no ano e mês informados.
+
+* **Método:** `GET`
+* **URL:** `http://127.0.0.1:8000/certificados`
+* **Parâmetros de Query:**
+  * `ano` (obrigatório): O ano que deseja processar (Ex: `2026`).
+  * `mês` (obrigatório): Mês de busca em letras maiúsculas (ex: JANEIRO).
+
+<details>
+<summary><b>▶ Ver Exemplo de Resposta (200 OK)</b></summary>
+
+```json
+{
+    "status": "Success",
+    "mensagem": "Contagem de certificados para o ano 2026 e mês JANEIRO obtida com sucesso.",
+    "result": [
+        {
+            "ocd": "MODERNA",
+            "quantidade_de_certificado": XXX
+        },
+        {
+            "ocd": "NCC",
+            "quantidade_de_certificado": XXX
+        },
+        {
+            "ocd": "ICC",
+            "quantidade_de_certificado": XXX
+        }
+    ]
 }
 
   ```
 
+**Exemplo de Requisição:**
 
-- Certificados OCDS
-```
-http://127.0.0.1:8000/certificados?ano=2025&mes=JANEIRO
+	GET [http://127.0.0.1:8000/certificados?ano=2026&mes=JANEIRO](http://127.0.0.1:8000/certificados?ano=2026&mes=JANEIRO)
 
 
+
+### 2. Contagem Geral de Certificados por OCD
+Retorna a listagem e contagem de certificados de todas as OCDs com base no ano e mês informados.
+
+* **Método:** `GET`
+* **URL:** `http://127.0.0.1:8000/certificados/{OCD}`
+* **Parâmetros de Query:**
+  * `OCD` (obrigatório): O nome da organização na URL (ex: MODERNA).
+  * `Ano` (obrigatório): O ano de busca (ex: 2026)
+  * `ês` (obrigatório): Mês de busca em letras maiúsculas (ex: JANEIRO).
+
+<details>
+<summary><b>▶ Ver Exemplo de Resposta (200 OK)</b></summary>
+
+```json
 {
-	"status": "Success",
-	"mensagem": "Contagem de certificados para o ano 2025 e mês JANEIRO obtida com sucesso.",
-	"result": [
-		{
-			"ocd": "MODERNA",
-			"quantidade_de_certificado": XXX
-		},
-		{
-			"ocd": "NCC",
-			"quantidade_de_certificado": XX
-		},
-		{
-			"ocd": "ICC",
-			"quantidade_de_certificado": XX
-		}
-	]
+    "status": "Success",
+    "mensagem": "Contagem de certificados para o ano 2026 e mês JANEIRO obtida com sucesso.",
+    "result": [
+        {
+            "ocd": "MODERNA",
+            "quantidade_de_certificado": XXX
+        }
+    ]
 }
-```
 
-- Certificados OCD Moderna
-```
-http://127.0.0.1:8000/certificados/MODERNA?ano=2025&mes=JANEIRO
+  ```
 
+**Exemplo de Requisição:**
 
-{
-	"status": "Success",
-	"mensagem": "Contagem de certificados para o ano 2025 e mês JANEIRO obtida com sucesso.",
-	"result": [
-		{
-			"ocd": "MODERNA",
-			"quantidade_de_certificado": XX
-		}
-	]
-}
-```
+	GET [http://127.0.0.1:8000/certificados/MODERNA?ano=2026&mes=JANEIRO](http://127.0.0.1:8000/certificados/MODERNA?ano=2026&mes=JANEIRO)
