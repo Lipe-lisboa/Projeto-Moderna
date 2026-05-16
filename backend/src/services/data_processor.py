@@ -3,6 +3,7 @@ import pandas as pd
 from utils.functios import ocds
 from typing import Optional
 
+# Classe responsável por processar os dados dos certificados, convertendo-os para Parquet e realizando contagens específicas
 class DataProcessor:
     def __init__(self, root_dir: str, docs_dir: str, parquet_base_dir: str):        
         
@@ -10,6 +11,7 @@ class DataProcessor:
         self.docs_dir = docs_dir
         self.parquet_base_dir = parquet_base_dir
 
+        # Dicionário para mapear os nomes dos meses em português para seus respectivos códigos numéricos
         self.lista_mes = {
             'janeiro': '01',
             'fevereiro': '02',
@@ -25,6 +27,7 @@ class DataProcessor:
             'dezembro': '12',
         }
 
+        # Dicionário para mapear os nomes dos órgãos certificadores para nomes mais amigáveis ou padronizados
         self.dict_name = {
             'UL-BR': 'UL',
             'OCP': 'OCPTELLI',
@@ -42,6 +45,7 @@ class DataProcessor:
             '7C': 'SEVEN COMPLIANCE'
         }
 
+    # Método para processar o arquivo CSV, filtrar os dados por mês e ano, e converter os resultados para arquivos Parquet
     def process_and_convert_to_parquet(self, ano:int):
         # Caminho do arquivo CSV extraído
         csv_file_path = self.docs_dir / "Produtos_Homologados_Anatel.csv"
@@ -93,18 +97,23 @@ class DataProcessor:
         except Exception as e:
             return f"Erro no processamento Pandas/Parquet: {e}"
 
+    # Método para contar a quantidade de certificados por órgão certificador, com opções de filtragem por ano, mês e OCD específico
     def contar_certificados(self, ano:int, mes:str, ocd_enviado: Optional[str] = None):
 
+        # Caminho do arquivo Parquet a ser lido, baseado no ano e mês fornecidos
         path = self.parquet_base_dir / str(ano) / f"certificados_de_{mes}.parquet"
         
         try:
             df = pd.read_parquet(path) # Lê o arquivo Parquet usando Pandas
 
+        # Trata erros comuns, como arquivo não encontrado ou problemas na leitura do Parquet, e retorna mensagens de erro apropriadas
         except FileNotFoundError:
             return "arquivo não encontrado"
         except Exception as e:
             return f"Erro ao tentar ler o arquivo Parquet: {e} "
 
+        # Filtra a lista de OCDs com base no DataFrame lido, se um OCD específico for enviado, ele será usado para a contagem, 
+        # caso contrário, a função ocds será chamada para obter a lista de OCDs para o ano e mês fornecidos
         if ocd_enviado is not None:
             lista_ocd = [ocd_enviado]
         else:
@@ -114,13 +123,17 @@ class DataProcessor:
 
         coluna = "Certificado de Conformidade Técnica"
 
+        # Verifica se a lista de OCDs não está vazia antes de tentar filtrar o DataFrame e contar os certificados, 
+        # garantindo que o processo só ocorra se houver OCDs para analisar
         if lista_ocd:
 
             for ocd in lista_ocd:
 
                 df_filtrado = df[df[coluna].str.contains(ocd, na=False)] # Filtra o DataFrame para o OCD atual, ignorando valores nulos
                 quantidade_certificados = df_filtrado[coluna].nunique() # Conta o número de certificados únicos para o OCD atual
-                print(f"OCD: {ocd}, Quantidade de Certificados: {quantidade_certificados}")
+
+                # Imprime o OCD e a quantidade de certificados encontrados para depuração e verificação dos resultados intermediários
+                print(f"OCD: {ocd}, Quantidade de Certificados: {quantidade_certificados}") 
                 print()
 
                 # Verifica se há certificados para o OCD atual
@@ -140,6 +153,7 @@ class DataProcessor:
             saida['CPQD'] += saida['CPQD-I'] # Adiciona a contagem de CPQD-I à contagem de CPQD
             saida.pop('CPQD-I') # Remove a entrada de CPQD-I do dicionário
 
+        # Lógica específica OCP-I + OCPTELLI
         if 'OCP-I' in saida and 'OCPTELLI' in saida:
             saida['OCPTELLI'] += saida['OCP-I'] # Adiciona a contagem de OCP-I à contagem de OCPTELLI
             saida.pop('OCP-I') # Remove a entrada de OCP-I do dicionário
