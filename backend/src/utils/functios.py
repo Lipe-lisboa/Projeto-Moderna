@@ -23,8 +23,11 @@ def ocds(ano, mes):
             if iniciais_certificado not in list_ocds:
                 list_ocds.append(iniciais_certificado)
         
-        #Deixa apenas letras e traço
-        ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado).strip('/- ')
+        # 1. NOVA LINHA: Remove o primeiro número encontrado e TUDO o que vem depois dele
+        certificado_cortado = regex.split(r'\d', certificado)[0]
+
+        # 2. SUA LINHA ORIGINAL (aplicada agora ao texto cortado)
+        ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado_cortado).strip('/- ')
         
 
         #Adiciona o ocd na lista de ocds
