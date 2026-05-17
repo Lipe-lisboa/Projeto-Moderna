@@ -18,8 +18,8 @@ file_manager = FileManager(ROOT_DIR, DOCS_DIR)
 
 app = FastAPI()
 
-@app.get("/criar-parquets")
-def criar_parquets(
+@app.get("/carregar-dados")
+def carregar_dados(
     ano:int, 
     ):
     try:
