@@ -12,28 +12,38 @@ mes_g = st.selectbox(
     LISTA_MESES,
     key="mes_g"
 )
-numero_de_ocds = st.slider("Número de OCDs que deseja visualizar", min_value=1, max_value=25, value=10, key="num_ocds")
+numero_de_ocds = st.slider("Número de OCDs que deseja visualizar", min_value=3, max_value=20, value=10, key="num_ocds")
 
 if st.button("Consultar Geral"):
-# 1. Monta a URL com os parâmetros que o usuário escolheu
+    # Monta a URL com os parâmetros que o usuário escolheu
     url_completa = f"{API_URL}/certificados?ano={ano_g}&mes={mes_g}"
     
     with st.spinner("Buscando dados na API..."):
         try:
-            # 2. Faz a requisição para o Backend
+            # Faz a requisição para o Backend
             response = requests.get(url_completa)
             
+            # Verifica se a resposta foi bem-sucedida
             if response.status_code == 200:
                 dados = response.json()["result"]
                 
-                # 3. Transforma o JSON em um DataFrame do Pandas para exibir
+                # Transforma o JSON em um DataFrame do Pandas para exibir
                 df = pd.DataFrame(dados)
+
+                # Verifica se o DataFrame está vazio
+                if df.empty:
+                    st.warning(f"Nenhum dado encontrado para o período selecionado.")
+                    st.stop()   
+
+                # Ordena o DataFrame pela quantidade de certificados
                 df_total = df.head(numero_de_ocds)
                 df_top3 = df.head(3)
+
+                # Calcula a soma dos certificados dos OCDs que não estão no top 3
                 outros_valores = df.iloc[3:].sum()
                 
-                # 4. Exibe os resultados de forma bonita
-                st.success(f"Dados de {mes_g.capitalize()} de {ano_g} carregados!")
+                # Exibe a mensagem de sucesso
+                st.success(response.json()["mensagem"])
                 
                 # Mostra uma tabela
                 st.dataframe(df_total, use_container_width=True)
@@ -55,7 +65,7 @@ if st.button("Consultar Geral"):
                 st.plotly_chart(fig)
 
             else:
-                st.error(f"Erro na API: {response.status_code}")
+                st.error(response.json().get("mensagem"))
         
         except Exception as e:
             st.error(f"O Backend está desligado? Erro: {e}")
