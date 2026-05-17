@@ -11,9 +11,9 @@ ROOT_DIR = CURRENT_DIR.parent
 
 # 3. Define os caminhos das pastas de destino
 DOCS_DIR = ROOT_DIR / "docs"
-PARQUET_DIR = ROOT_DIR / "arquivos_parquet"
+DB_PATH = ROOT_DIR / "src" /"banco.db"
 
-processor = DataProcessor(ROOT_DIR, DOCS_DIR, PARQUET_DIR)
+processor = DataProcessor(ROOT_DIR, DOCS_DIR, DB_PATH)
 file_manager = FileManager(ROOT_DIR, DOCS_DIR)
 
 app = FastAPI()
@@ -26,12 +26,12 @@ def criar_parquets(
 
         file_manager.download_data()
         file_manager.extract_data()
-        result = processor.process_and_convert_to_parquet(ano)
+        result = processor.process_and_save_to_db(ano)
 
         return {
-            "status": "Success",
-            "mensagem": f"Arquivos Parquet para o ano {ano} foram criados com sucesso.",
-            "result": result
+            "status": result.get("status"),
+            "mensagem": result.get("mensagem"),
+            'status_code': result.get("status_code")
             }
     except Exception as e:
 
@@ -45,18 +45,13 @@ def criar_parquets(
 def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
     
     try:
-        dados = processor.contar_certificados(ano, mes, ocd_enviado.upper())
+        result = processor.contar_certificados(ano, mes, ocd_enviado.upper())
 
-        if dados is None:
-            raise HTTPException(
-                status_code=450,
-                detail={"Status": "Fail", "Mensagem": "Dados não encontrados para este período ou para este OCD."}
-            )
-        
         return {
-            "status": "Success",
-            "mensagem": f"Contagem de certificados para o ano {ano} e mês {mes} obtida com sucesso.",
-            "result": dados
+            "status": result.get("status"),
+            "mensagem": result.get("mensagem"),
+            "status_code": result.get("status_code"),
+            "result": result.get("result")
         }
     except Exception as e:
         raise HTTPException(
@@ -66,26 +61,16 @@ def certificados_ocd(ocd_enviado: str,ano:int, mes:str):
 
 
 @app.get("/certificados")
-def certificados_ocds(
-    ano:int, 
-    mes:str, 
-    ):
-    
+def certificados_ocds(ano:int, mes:str):
     try:
-        dados = processor.contar_certificados(ano, mes)
+        result = processor.contar_certificados(ano, mes)
 
-        if dados is None:
-            raise HTTPException(
-                status_code=450,
-                detail={"Status": "Fail", "Mensagem": "Dados não encontrados para este período."}
-            )
-        
         return {
-            "status": "Success",
-            "mensagem": f"Contagem de certificados para o ano {ano} e mês {mes} obtida com sucesso.",
-            "result": dados
+            "status": result.get("status"),
+            "mensagem": result.get("mensagem"),
+            "status_code": result.get("status_code"),
+            "result": result.get("result")
         }
-    
     except Exception as e:
         raise HTTPException(
             status_code=500,
