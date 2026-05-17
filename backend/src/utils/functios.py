@@ -2,111 +2,36 @@ import pandas as pd
 import regex
 import re
 
+# Função para extrair os OCDs dos certificados
+def ocds(df: pd.DataFrame) -> list:
 
-
-def ocds(ano, mes):
-    try:
-        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
-        
-    except FileNotFoundError:
-        print("arquivo não encontrado")
-        return
+    # Verifica se o DataFrame está vazio antes de tentar processar os certificados
+    if df.empty:
+        return []
         
     list_ocds = []
     
-    for certificado in df['Certificado de Conformidade Técnica']:
+    # Itera sobre cada certificado na coluna do DataFrame
+    for certificado in df:
         
-        
+        # Extrai as duas primeiras letras do certificado para verificar se é um certificado do tipo '7C'
         iniciais_certificado = certificado[0:2]
         
+        # Se as iniciais do certificado forem '7C', adiciona '7C' à lista de OCDs (se ainda não estiver presente)
         if iniciais_certificado == '7C':
             if iniciais_certificado not in list_ocds:
                 list_ocds.append(iniciais_certificado)
         
-        # 1. NOVA LINHA: Remove o primeiro número encontrado e TUDO o que vem depois dele
+        # Remove o primeiro número encontrado e TUDO o que vem depois dele
         certificado_cortado = regex.split(r'\d', certificado)[0]
 
-        # 2. SUA LINHA ORIGINAL (aplicada agora ao texto cortado)
+        # Remove caracteres indesejados, mantendo apenas letras, hífens, underscores e espaços.
+        # Também remove espaços, hífens e underscores extras no início e no final.
         ocd = regex.sub(r'[^a-zA-Z\p{L}-_/ ]+', '', certificado_cortado).strip('/- ')
-        
 
-        #Adiciona o ocd na lista de ocds
+        # Adiciona o ocd na lista de ocds
         if ocd not in list_ocds:
             if not 'TESTE' in ocd.upper() and len(ocd) > 1 and ocd != '':
                 list_ocds.append(ocd)
 
     return list_ocds
-
-def certificados(ano, mes):
-    try:
-        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
-        
-    except FileNotFoundError:
-        print("arquivo não encontrado")
-        return
-        
-    
-    #lista de certificados com apenas numeros 
-    lista_certificado_digitos = []
-    
-    #todos certificados 
-    todos_certificados = []
-    
-    #qtd total de certificados 
-    qtd_total = 0
-    
-    for certificado in df['Certificado de Conformidade Técnica']:
-        
-        if certificado not in todos_certificados:
-            todos_certificados.append(certificado)
-            qtd_total += 1
-        
-        contem_letra = bool(re.search(r'[a-zA-Z]', certificado))
-        if not contem_letra:
-            if certificado not in lista_certificado_digitos:
-                lista_certificado_digitos.append(certificado)
-        
-    return lista_certificado_digitos, qtd_total
-
-def function_tipo_certificado(ano, mes):
-    try:
-        df = pd.read_parquet(f'../arquivos_parquet/{ano}/certificados_de_{mes}.parquet')
-        
-    except FileNotFoundError:
-        print("arquivo não encontrado")
-        return
-    
-    abreviacao_ano = str(ano)[2:4]
-    
-    homolocacoes_iniciais = []
-    qtd_caracteres = []
-    qtd_homolocacoes_iniciais = 0
-    for numero_homologacao in df['Número de Homologação']:
-        numero_homologacao = str(numero_homologacao)
-        qtd_caracter = len(numero_homologacao)
-        
-        if qtd_caracter not in qtd_caracteres:
-            qtd_caracteres.append(qtd_caracter)
-            
-        
-        ano_certicado = None
-        if qtd_caracter < 12:
-            qtd_zero = 12 - qtd_caracter
-            numero_homologacao = (qtd_zero * '0')+numero_homologacao 
-            
-    
-        ano_certicado = numero_homologacao[5:7]
-        
-        if int(ano_certicado) > int(abreviacao_ano):
-            print('ano do certificado:',ano_certicado)
-            
-
-            
-        if abreviacao_ano == ano_certicado:
-            if numero_homologacao not in homolocacoes_iniciais:
-                homolocacoes_iniciais.append(numero_homologacao)
-                qtd_homolocacoes_iniciais += 1
-    
-    print('quantidade de caracteres:',qtd_caracteres)
-    return qtd_homolocacoes_iniciais
-         
