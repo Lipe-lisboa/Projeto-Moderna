@@ -65,11 +65,11 @@ Abaixo estão listados os principais endpoints da API. Você pode testar essas r
 ---
 
 
-### 1. Criar Arquivos Parquet
+### 1. Carregar Dados Anatel
 Gera os arquivos no formato Parquet com base no ano fornecido.
 
 * **Método:** `POST`
-* **URL:** `http://127.0.0.1:8000/criar-parquets`
+* **URL:** `http://127.0.0.1:8000/carregar-dados`
 * **Parâmetros de Query:**
   * `ano` (obrigatório): O ano que deseja processar (Ex: `2026`).
 
@@ -87,7 +87,7 @@ Gera os arquivos no formato Parquet com base no ano fornecido.
 
 **Exemplo de Requisição:**
 
-	POST [http://127.0.0.1:8000/criar-parquets?ano=2026](http://127.0.0.1:8000/criar-parquets?ano=2026)
+	POST [http://127.0.0.1:8000/carregar-dados?ano=2026](http://127.0.0.1:8000/carregar-dados?ano=2026)
 
 </details>
 

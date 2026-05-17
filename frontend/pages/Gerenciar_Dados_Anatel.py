@@ -2,12 +2,12 @@ import streamlit as st
 from utils import API_URL
 import requests
 
-st.header("Carregar Dados Parquet")
+st.header("Carregar Dados Anatel")
 
 ano = st.number_input("Ano", value=2026,max_value=2026 ,key="ano_p")
 
-if st.button("Carregar Dados Parquet"):
-    url_completa = f"{API_URL}/criar-parquets?ano={ano}"
+if st.button("Carregar Dados"):
+    url_completa = f"{API_URL}/carregar-dados?ano={ano}"
 
     with st.spinner("Buscando dados na API..."):
         response = requests.get(url_completa)
