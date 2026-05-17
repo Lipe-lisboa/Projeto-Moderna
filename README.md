@@ -14,6 +14,7 @@ API criada para o Market Share do OCD (Organismo de Certificação Designado) Mo
 - [FastAPI](https://fastapi.tiangolo.com/#requirements)
 - [Pandas](https://pandas.pydata.org/docs/)
 - [Streamlit](https://docs.streamlit.io/)
+- [SQlite](https://sqlite.org/docs.html)
 
 ## 🚀 Como Executar o Projeto
 
@@ -26,9 +27,10 @@ API criada para o Market Share do OCD (Organismo de Certificação Designado) Mo
 	pip install -r requirements.txt
 	
 
-3. Renomeie a pasta de exemplos para que o sistema reconheça os arquivos de dados
+3. Renomeie o arquivo banco_exemplo.db para que o sistema reconheça o banco de dados
 	```bash
-	Altere o nome de arquivos_parquet_exemplo para arquivos_parquet
+	Altere o nome de banco_exemplo.db para banco.db
+
 
 ## 🛠️ Inicializando a Aplicação
 - Para executar a aplicação entre no diretorio em que a API se encontra (src):
