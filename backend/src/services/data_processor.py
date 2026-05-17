@@ -1,27 +1,29 @@
 import os
 import pandas as pd
-from utils.functios import ocds
 from typing import Optional
+import sqlite3
+from utils.functios import ocds
 
-# Classe responsável por processar os dados dos certificados, convertendo-os para Parquet e realizando contagens específicas
+
+# Classe responsável por processar os dados dos certificados, incluindo leitura do CSV, filtragem por ano e mês, e contagem de certificados por órgão certificador
 class DataProcessor:
-    def __init__(self, root_dir: str, docs_dir: str, parquet_base_dir: str):        
-        
+    def __init__(self, root_dir: str, docs_dir: str, db_path: str):        
+
         self.root_dir = root_dir
         self.docs_dir = docs_dir
-        self.parquet_base_dir = parquet_base_dir
+        self.db_path = db_path
 
         # Dicionário para mapear os nomes dos meses em português para seus respectivos códigos numéricos
         self.lista_mes = {
-            'janeiro': '01',
-            'fevereiro': '02',
-            'março':'03',
-            'abril': '04',
-            'maio': '05',
-            'junho': '06',
-            'julho': '07',
-            'agosto': '08',
-            'setembro': '09',
+            'janeiro': '1',
+            'fevereiro': '2',
+            'março':'3',
+            'abril': '4',
+            'maio': '5',
+            'junho': '6',
+            'julho': '7',
+            'agosto': '8',
+            'setembro': '9',
             'outubro': '10',
             'novembro': '11',
             'dezembro': '12',
@@ -45,16 +47,18 @@ class DataProcessor:
             '7C': 'SEVEN COMPLIANCE'
         }
 
-    # Método para processar o arquivo CSV, filtrar os dados por mês e ano, e converter os resultados para arquivos Parquet
-    def process_and_convert_to_parquet(self, ano:int):
+    # Método para processar os dados do CSV, filtrar por ano e salvar os dados processados no banco de dados SQLite
+    def process_and_save_to_db(self, ano:int):
         # Caminho do arquivo CSV extraído
         csv_file_path = self.docs_dir / "Produtos_Homologados_Anatel.csv"
 
         # Verifica se o arquivo CSV existe
         if not os.path.exists(csv_file_path):
-            print(f"Erro: O arquivo '{csv_file_path}' não foi encontrado.")
-            return
-        
+            return {
+                "status": "Fail",
+                "mensagem": f"O arquivo '{csv_file_path}' não foi encontrado.",
+                "status_code": 404
+            }
         try:
 
             # Lê o CSV usando Pandas para garantir a leitura correta dos dados, especialmente com encoding e separadores
@@ -73,100 +77,153 @@ class DataProcessor:
             col_data = "Data do Certificado de Conformidade Técnica"
             df[col_data] = pd.to_datetime(df[col_data], dayfirst=True, errors='coerce')
 
-            # Cria a pasta de saída para o ano, se não existir
-            pasta_ano = self.root_dir / "arquivos_parquet" / str(ano) # Define o caminho da pasta do ano
-            pasta_ano.mkdir(parents=True, exist_ok=True) # Cria a pasta se não existir
+            # Filtra o DataFrame para o ano específico, garantindo que apenas os dados do ano
+            #  desejado sejam processados
+            df_ano = df[df[col_data].dt.year == ano].copy()
 
-            # Filtra e salva os dados por mês
-            for mes_name, mes_cod in self.lista_mes.items():
-                mes_int = int(mes_cod)
-                
-                # Filtragem do DataFrame para o mês e ano específicos
-                df_mes = df[(df[col_data].dt.month == mes_int) & (df[col_data].dt.year == ano)]
+            if df_ano.empty:
+                return {
+                    "status": "Fail",
+                    "mensagem": f"Nenhum dado encontrado para o ano {ano}.",
+                    "status_code": 404
+                }
 
-                # Se houver dados, converte e salva
-                if not df_mes.empty:
-                    # Define o caminho do arquivo de saída
-                    arquivo_saida = pasta_ano / f"certificados_de_{mes_name}.parquet"
+            # Adiciona colunas de ano e mês para facilitar a filtragem posterior por mês
+            df_ano['ano_filtro'] = df_ano[col_data].dt.year
+            df_ano['mes_filtro'] = df_ano[col_data].dt.month
 
-                    # Converte o DataFrame do Pandas para Parquet usando o método to_parquet
-                    df_mes.to_parquet(arquivo_saida, index=False)
+            # Renomeia as colunas para nomes mais amigáveis e consistentes com o banco de dados
+            df_ano.columns = [
+                'numero_homologacao', 
+                'certificado_tecnico',
+                'data_certificado',
+                'ano_filtro', 
+                'mes_filtro'
+            ]
 
-            return f"Processamento do ano {ano} concluído com sucesso!"
+            conn = sqlite3.connect(self.db_path) # Conecta ao banco de dados SQLite usando o caminho fornecido
 
+            try:
+                conn.execute(f"DELETE FROM certificados WHERE ano_filtro = {ano}")
+                conn.commit()
+            except:
+                pass # Se a tabela não existir ainda, ignora o erro do DELETE
+
+            # Salva o DataFrame na tabela 'certificados'. append garante que anos diferentes se acumulem lá
+            df_ano.to_sql('certificados', conn, if_exists='append', index=False)
+            conn.close()
+
+            # Retorna uma resposta de sucesso indicando que os dados do ano foram processados e salvos com sucesso no banco de dados
+            return {
+                "status": "Success",
+                "mensagem": f"Dados do ano {ano} processados e salvos com sucesso no banco de dados.",
+                "status_code": 200
+            }
+
+        # Tratamento de erros durante o processamento
         except Exception as e:
-            return f"Erro no processamento Pandas/Parquet: {e}"
+            return {
+                "status": "Fail",
+                "mensagem": f"Erro no processamento Banco de Dados: {e}",
+                "status_code": 500
+            }
 
     # Método para contar a quantidade de certificados por órgão certificador, com opções de filtragem por ano, mês e OCD específico
     def contar_certificados(self, ano:int, mes:str, ocd_enviado: Optional[str] = None):
 
-        # Caminho do arquivo Parquet a ser lido, baseado no ano e mês fornecidos
-        path = self.parquet_base_dir / str(ano) / f"certificados_de_{mes}.parquet"
-        
+        # Converte o nome do mês em texto para o número correspondente (ex: 'janeiro' -> 1)
+        mes_num = self.lista_mes.get(mes.lower())
+
+        # Verifica se o mês enviado é válido, ou seja, se existe no dicionário de meses.
+        # Se não for válido, retorna uma resposta de erro indicando que o mês é inválido.
+        if not mes_num:
+            return {
+                "status": "Fail",
+                "mensagem": "Mês inválido enviado.",
+                'status_code': 400
+            }
+
         try:
-            df = pd.read_parquet(path) # Lê o arquivo Parquet usando Pandas
+            # Abre conexão e busca dados filtrados do banco usando Pandas
+            conn = sqlite3.connect(self.db_path)
+            
+            # Monta a query SQL para selecionar os dados do ano e mês específicos, 
+            # garantindo que apenas os dados relevantes sejam carregados para o DataFrame
+            query = f"SELECT * FROM certificados WHERE ano_filtro = {ano} AND mes_filtro = {mes_num}"
+            
+            # Lê os dados diretamente para um DataFrame do Pandas, facilitando a manipulação e filtragem dos dados
+            df = pd.read_sql_query(query, conn)
+            conn.close()
 
-        # Trata erros comuns, como arquivo não encontrado ou problemas na leitura do Parquet, e retorna mensagens de erro apropriadas
-        except FileNotFoundError:
-            return "arquivo não encontrado"
+        # Tratamento de erros para garantir que qualquer problema na consulta ao banco seja capturado 
+        # e comunicado de forma clara
         except Exception as e:
-            return f"Erro ao tentar ler o arquivo Parquet: {e} "
+            return {
+                "status": "Fail",
+                "mensagem": f"Erro ao consultar o Banco de Dados: {e}",
+                "status_code": 500
+            }
+        
 
-        # Filtra a lista de OCDs com base no DataFrame lido, se um OCD específico for enviado, ele será usado para a contagem, 
-        # caso contrário, a função ocds será chamada para obter a lista de OCDs para o ano e mês fornecidos
+        # Verifica se o DataFrame resultante da consulta está vazio. Se estiver vazio, significa que não há dados 
+        # para o ano e mês especificados, e a função retorna uma resposta de erro indicando que nenhum dado foi encontrado.
+        if df.empty:
+            return {
+                "status": "Fail",
+                "mensagem": "Nenhum dado encontrado.",
+                "status_code": 404
+            }
+
+        # Se um OCD específico foi enviado como parâmetro, a função cria uma lista contendo apenas esse OCD.
+        #  Caso contrário, a função chama a função auxiliar 'ocds' para extrair a lista de OCDs únicos 
+        # presentes na coluna 'certificado_tecnico' do DataFrame.
         if ocd_enviado is not None:
             lista_ocd = [ocd_enviado]
         else:
-            lista_ocd = ocds(ano, mes)
+            # Chame sua função auxiliar 'ocds' ou extraia as ocds direto do df se preferir
+            lista_ocd = ocds(df['certificado_tecnico'])
 
         saida = {}
-
-        coluna = "Certificado de Conformidade Técnica"
-
-        # Verifica se a lista de OCDs não está vazia antes de tentar filtrar o DataFrame e contar os certificados, 
-        # garantindo que o processo só ocorra se houver OCDs para analisar
+        coluna = "certificado_tecnico" # Nome atualizado da coluna no banco
+        
+        # Para cada OCD na lista de OCDs, a função filtra o DataFrame para incluir apenas as linhas onde a coluna 
+        # 'certificado_tecnico' contém o nome do OCD. Em seguida, conta a quantidade de certificados únicos
+        # para esse OCD e armazena o resultado em um dicionário de saída, mapeando o nome do OCD para a quantidade de certificados encontrados.
         if lista_ocd:
-
             for ocd in lista_ocd:
+                df_filtrado = df[df[coluna].str.contains(ocd, na=False)]
+                quantidade_certificados = df_filtrado[coluna].nunique()
 
-                df_filtrado = df[df[coluna].str.contains(ocd, na=False)] # Filtra o DataFrame para o OCD atual, ignorando valores nulos
-                quantidade_certificados = df_filtrado[coluna].nunique() # Conta o número de certificados únicos para o OCD atual
-
-                # Imprime o OCD e a quantidade de certificados encontrados para depuração e verificação dos resultados intermediários
-                print(f"OCD: {ocd}, Quantidade de Certificados: {quantidade_certificados}") 
-                print()
-
-                # Verifica se há certificados para o OCD atual
                 if quantidade_certificados:
-                    if ocd in self.dict_name:# Verifica se o OCD está no dicionário
-                        ocd = self.dict_name[ocd] # Mapeia o nome do OCD conforme o dicionário
-                    saida[ocd.upper()] = quantidade_certificados # Armazena a contagem no dicionário
+                    if ocd in self.dict_name:
+                        ocd = self.dict_name[ocd]
+                    saida[ocd.upper()] = quantidade_certificados
 
-        # Lógica específica ABCP vs BRICS
-        # Se ambos ABCP e BRICS estiverem presentes, subtrai a contagem de ABCP de BRICS
+        # Agrupamentos específicos (ABCP vs BRICS / CPQD / OCPTELLI)
         if 'ABCP' in saida and 'BRICS' in saida:
             if saida['BRICS'] > saida['ABCP']:
-                saida['BRICS'] -= saida['ABCP'] # Remove a contagem de ABCP de BRICS
+                saida['BRICS'] -= saida['ABCP']
 
-        # Lógica específica CPQD + CPQD-I
         if 'CPQD' in saida and 'CPQD-I' in saida:
-            saida['CPQD'] += saida['CPQD-I'] # Adiciona a contagem de CPQD-I à contagem de CPQD
-            saida.pop('CPQD-I') # Remove a entrada de CPQD-I do dicionário
+            saida['CPQD'] += saida['CPQD-I']
+            saida.pop('CPQD-I')
 
-        # Lógica específica OCP-I + OCPTELLI
         if 'OCP-I' in saida and 'OCPTELLI' in saida:
-            saida['OCPTELLI'] += saida['OCP-I'] # Adiciona a contagem de OCP-I à contagem de OCPTELLI
-            saida.pop('OCP-I') # Remove a entrada de OCP-I do dicionário
+            saida['OCPTELLI'] += saida['OCP-I']
+            saida.pop('OCP-I')
         elif 'OCP-I' in saida and 'OCPTELLI' not in saida:
-            saida['OCPTELLI'] = saida.pop('OCP-I') # Renomeia OCP-I para OCPTELLI se OCPTELLI não existir
+            saida['OCPTELLI'] = saida.pop('OCP-I')
 
-        # transforma o dicionário em uma lista de dicionários
-        resultado = [
-                {"ocd": k, "quantidade_de_certificado": v} 
-                for k, v in saida.items()
-            ]
-        
-        # Ordena a lista pelo valor (chave 'valor') em ordem decrescente
+        # Cria uma lista de dicionários a partir do dicionário de saída, onde cada dicionário contém o nome do OCD 
+        # e a quantidade de certificados correspondente.
+        resultado = [{"ocd": k, "quantidade_de_certificado": v} for k, v in saida.items()]
         dados = sorted(resultado, key=lambda item: item['quantidade_de_certificado'], reverse=True)      
         
-        return dados
+        # Retorna uma resposta de sucesso contendo a mensagem de que os certificados foram obtidos com sucesso,
+        # o resultado da contagem de certificados por OCD e o código de status HTTP 200 indicando que a requisição foi bem-sucedida.
+        return {
+            "status": "Success",
+            "mensagem": f"Certificados de {mes} de {ano} obtidos com sucesso.",
+            "result": dados,
+            "status_code": 200
+        }
